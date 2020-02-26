@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>srrg2_solver_gui</name>
+  <version>0.0.0</version>
+  <description>The srrg2_solver_gui package</description>
+  <license>BSD-4</license>
+  
+  <maintainer email="grisetti@diag.uniroma1.it">Giorgio Grisetti</maintainer>
+  <maintainer email="ialoise@diag.uniroma1.it">Irvin Aloise</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>srrg_cmake_modules</build_depend>
+  <build_depend>srrg2_core</build_depend>
+  <build_depend>srrg2_solver</build_depend>
+  <build_depend>srrg2_qgl_viewport</build_depend>
+
+  <run_depend>srrg_cmake_modules</run_depend>
+  <run_depend>srrg2_core</run_depend>
+  <run_depend>srrg2_solver</run_depend>
+  <run_depend>srrg2_qgl_viewport</run_depend>
+
+</package>

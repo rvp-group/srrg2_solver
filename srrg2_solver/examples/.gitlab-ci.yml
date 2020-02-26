@@ -1,0 +1,108 @@
+#///////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ds script executed before starting each stage
+before_script:
+  #ds prepare generic environment for SRRG2 builds and tests
+  #ds currently retrieved from cmake_modules repository (which is public)
+  #ds this script is intended for SRRG2 images only (no apt update/upgrade will be performed)
+  - mkdir -p '/root/workspace/src' && cd '/root/workspace/src/'
+  - git clone 'https://gitlab.com/srrg-software/srrg_cmake_modules.git'
+  - export SRRG_SCRIPT_PATH='/root/workspace/src/srrg_cmake_modules/ci_scripts'
+  - ls -al "$SRRG_SCRIPT_PATH"
+  - source ${SRRG_SCRIPT_PATH}/install_catkin_workspace.sh "$CI_PROJECT_DIR" "$CI_PROJECT_NAME"
+  - source ${SRRG_SCRIPT_PATH}/install_ssh.sh
+
+
+
+#///////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ds build targets (EVEN TESTS!)
+build_ubuntu1604_kinetic_debug:
+  image: srrg-07:5000/srrg-ubuntu-16
+  stage: build
+  script:
+    - source ${SRRG_SCRIPT_PATH}/unpack_external_artifacts.sh "srrg2_core" "$CI_BUILD_REF_NAME" "$CI_JOB_NAME" "$ARTIFACT_PRIVATE_TOKEN"
+    - source ${SRRG_SCRIPT_PATH}/build.sh "/root/workspace/" "$CI_PROJECT_NAME" "DEBUG"
+    - source ${SRRG_SCRIPT_PATH}/pack_artifacts.sh "$CI_PROJECT_DIR" "$CI_PROJECT_NAME"
+  artifacts:
+    paths:
+      - artifacts/build.tar.gz
+      - artifacts/devel.tar.gz
+      
+build_ubuntu1604_kinetic_release:
+  image: srrg-07:5000/srrg-ubuntu-16
+  stage: build
+  script:
+    - source ${SRRG_SCRIPT_PATH}/unpack_external_artifacts.sh "srrg2_core" "$CI_BUILD_REF_NAME" "$CI_JOB_NAME" "$ARTIFACT_PRIVATE_TOKEN"
+    - source ${SRRG_SCRIPT_PATH}/build.sh "/root/workspace/" "$CI_PROJECT_NAME" "RELEASE"
+    - source ${SRRG_SCRIPT_PATH}/pack_artifacts.sh "$CI_PROJECT_DIR" "$CI_PROJECT_NAME"
+  artifacts:
+    paths:
+      - artifacts/build.tar.gz
+      - artifacts/devel.tar.gz
+
+build_ubuntu1804_melodic_debug:
+  image: srrg-07:5000/srrg-ubuntu-18
+  stage: build
+  script:
+    - source ${SRRG_SCRIPT_PATH}/unpack_external_artifacts.sh "srrg2_core" "$CI_BUILD_REF_NAME" "$CI_JOB_NAME" "$ARTIFACT_PRIVATE_TOKEN"
+    - source ${SRRG_SCRIPT_PATH}/build.sh "/root/workspace/" "$CI_PROJECT_NAME" "DEBUG"
+    - source ${SRRG_SCRIPT_PATH}/pack_artifacts.sh "$CI_PROJECT_DIR" "$CI_PROJECT_NAME"
+  artifacts:
+    paths:
+      - artifacts/build.tar.gz
+      - artifacts/devel.tar.gz
+
+build_ubuntu1804_melodic_release:
+  image: srrg-07:5000/srrg-ubuntu-18
+  stage: build
+  script:
+    - source ${SRRG_SCRIPT_PATH}/unpack_external_artifacts.sh "srrg2_core" "$CI_BUILD_REF_NAME" "$CI_JOB_NAME" "$ARTIFACT_PRIVATE_TOKEN"
+    - source ${SRRG_SCRIPT_PATH}/build.sh "/root/workspace/" "$CI_PROJECT_NAME" "RELEASE"
+    - source ${SRRG_SCRIPT_PATH}/pack_artifacts.sh "$CI_PROJECT_DIR" "$CI_PROJECT_NAME"
+  artifacts:
+    paths:
+      - artifacts/build.tar.gz
+      - artifacts/devel.tar.gz
+
+
+
+#///////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ds test targets (NO BUILDING WHATSOEVER!)
+test_ubuntu1604_kinetic_debug:
+  image: srrg-07:5000/srrg-ubuntu-16
+  stage: test
+  needs:
+    - build_ubuntu1604_kinetic_debug
+  script:
+    - cd /root/workspace/
+    - source ${SRRG_SCRIPT_PATH}/unpack_internal_artifacts.sh "$CI_PROJECT_DIR"
+    - source ${SRRG_SCRIPT_PATH}/run_unittests.sh "$CI_PROJECT_DIR" "/root/workspace/devel/lib/" "$CI_PROJECT_NAME"
+
+test_ubuntu1604_kinetic_release:
+  image: srrg-07:5000/srrg-ubuntu-16
+  stage: test
+  needs:
+    - build_ubuntu1604_kinetic_release
+  script:
+    - cd /root/workspace/
+    - source ${SRRG_SCRIPT_PATH}/unpack_internal_artifacts.sh "$CI_PROJECT_DIR"
+    - source ${SRRG_SCRIPT_PATH}/run_unittests.sh "$CI_PROJECT_DIR" "/root/workspace/devel/lib/" "$CI_PROJECT_NAME"
+
+test_ubuntu1804_melodic_debug:
+  image: srrg-07:5000/srrg-ubuntu-18
+  stage: test
+  needs:
+    - build_ubuntu1804_melodic_debug
+  script:
+    - cd /root/workspace/
+    - source ${SRRG_SCRIPT_PATH}/unpack_internal_artifacts.sh "$CI_PROJECT_DIR"
+    - source ${SRRG_SCRIPT_PATH}/run_unittests.sh "$CI_PROJECT_DIR" "/root/workspace/devel/lib/" "$CI_PROJECT_NAME"
+
+test_ubuntu1804_melodic_release:
+  image: srrg-07:5000/srrg-ubuntu-18
+  stage: test
+  needs:
+    - build_ubuntu1804_melodic_release
+  script:
+    - cd /root/workspace/
+    - source ${SRRG_SCRIPT_PATH}/unpack_internal_artifacts.sh "$CI_PROJECT_DIR"
+    - source ${SRRG_SCRIPT_PATH}/run_unittests.sh "$CI_PROJECT_DIR" "/root/workspace/devel/lib/" "$CI_PROJECT_NAME"

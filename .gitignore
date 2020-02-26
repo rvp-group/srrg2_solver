@@ -1,0 +1,10 @@
+*~
+.o
+\#*
+*.cproject
+*.project
+*/.settings/*
+./settings/*
+tags
+.vscode/*
+*/.vscode/*

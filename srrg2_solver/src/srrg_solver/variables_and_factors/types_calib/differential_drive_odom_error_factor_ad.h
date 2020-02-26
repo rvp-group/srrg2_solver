@@ -1,0 +1,58 @@
+#pragma once
+#include "differential_drive_odom_predictor_ad.h"
+#include "srrg_geometry/geometry2d.h"
+#include "srrg_solver/variables_and_factors/types_2d/variable_se2_ad.h"
+#include "srrg_solver/variables_and_factors/types_3d/variable_point3_ad.h"
+#include "srrg_solver/solver_core/ad_error_factor.h"
+#include "srrg_solver/solver_core/measurement_owner.h"
+
+namespace srrg2_solver {
+
+  class DifferentialDriveOdomErrorFactorAD : public ADErrorFactor_<3, VariablePoint3AD>,
+                                             public MeasurementOwnerEigen_<Isometry2f>,
+                                             public DifferentialDriveOdomPredictorAD {
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using BaseType          = ADErrorFactor_<3, VariablePoint3AD>;
+    using VariableTupleType = typename BaseType::VariableTupleType;
+    using BasePredictorType = DifferentialDriveOdomPredictorAD;
+    using ADErrorVectorType = typename BaseType::ADErrorVectorType;
+
+    ADErrorVectorType operator()(VariableTupleType& dd_params) final {
+      Isometry2_<DualValuef> robot_motion;
+      robot_motion.setIdentity();
+      // do the computation (all in dual value)
+      Vector3_<DualValuef> robot_motion_v =
+        BasePredictorType::_predictRobotMotion(dd_params.at<0>()->adEstimate());
+      robot_motion = srrg2_core::geometry2d::v2t(robot_motion_v);
+      return geometry2d::t2v<DualValuef>(_ad_measurement_inverse * robot_motion);
+    }
+
+    inline void setMeasurement(const Isometry2f& measurement_) override {
+      _measurement = measurement_;
+      convertMatrix(_ad_measurement_inverse, measurement_.inverse());
+    }
+
+    void serialize(ObjectData& odata, IdContext& context) override {
+      BaseType::serialize(odata, context);
+      ArrayData* mdata = new ArrayData;
+      for (int i = 0; i < 2; ++i) {
+        mdata->add(ticks()[i]);
+      }
+      odata.setField("ticks", mdata);
+    }
+
+    void deserialize(ObjectData& odata, IdContext& context) override {
+      BaseType::deserialize(odata, context);
+      Vector2f ticks;
+      ArrayData* mdata = dynamic_cast<ArrayData*>(odata.getField("ticks"));
+      for (int i = 0; i < 2; ++i) {
+        ticks[i] = (*mdata)[i].getFloat();
+      }
+      setTicks(ticks);
+    }
+
+  protected:
+    Isometry2_<DualValuef> _ad_measurement_inverse;
+  };
+} // namespace srrg2_solver

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>srrg2_solver_experiments</name>
+  <version>0.1.0</version>
+  <description>The srrg2_solver_extras package</description>
+
+  <maintainer email="frevo@todo.todo">frevo</maintainer>
+
+  <license>BSD-4</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <depend>srrg_cmake_modules</depend>
+  <depend>srrg2_core</depend>
+  <depend>srrg2_solver</depend>
+  <depend>srrg2_solver_extras</depend>
+   
+</package>

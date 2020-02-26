@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>srrg2_solver</name>
+  <version>0.8.0</version>
+  <description>The srrg2_solver package</description>
+
+  <maintainer email="grisetti@diag.uniroma1.it">Giorgio Grisetti</maintainer>
+  <maintainer email="guadagnino@diag.uniroma1.it">Tiziano Guadagnino</maintainer>
+  <license>BSD-4</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>srrg2_core</depend>
+  <depend>srrg_cmake_modules</depend>
+</package>
