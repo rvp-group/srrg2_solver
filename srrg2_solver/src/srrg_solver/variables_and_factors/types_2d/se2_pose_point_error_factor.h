@@ -7,6 +7,10 @@
 namespace srrg2_solver {
   using namespace srrg2_core;
 
+  /** @brief 2D Pose-point factor. Estimates the robot pose and the 2D landmark position.
+   * Error is computed by the difference of landmark's prediction in robot's coordinates and the
+   * measurement gathered
+   */
   class SE2PosePointErrorFactor : public ErrorFactor_<2, VariableSE2Right, VariablePoint2>,
                                   public MeasurementOwnerEigen_<Vector2f> {
   public:

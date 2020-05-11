@@ -4,13 +4,10 @@
 namespace srrg2_solver {
   using IntPair = std::pair<int, int>;
 
-  MatrixBlockFactory* MatrixBlockFactory::_instance = new MatrixBlockFactory();
+  MatrixBlockFactory __my_factory;
 
   MatrixBlockFactory* MatrixBlockFactory::instance() {
-    /*      if (!_instance)
-            _instance=new MatrixBlockFactory();
-    */
-    return _instance;
+    return &__my_factory;
   }
 
   MatrixBlockBase* MatrixBlockFactory::createBlock(int r, int c) {

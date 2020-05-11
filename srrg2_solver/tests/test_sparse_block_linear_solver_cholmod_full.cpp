@@ -33,7 +33,7 @@ void createFactorGraph(const Isometry3fVector& gt_trajectory_,
                          const bool enable_closure_);
 
 int main(int argc, char** argv) {
-  registerTypes3D();
+  variables_and_factors_3d_registerTypes();
   solver_registerTypes();
   linear_solver_registerTypes();
 

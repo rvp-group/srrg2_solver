@@ -5,18 +5,19 @@
 namespace srrg2_solver {
   using namespace srrg2_core;
 
-  // to declate an ad variable extend and specialize the advariable class
-  // the template argument is a variable  (non autodiff)
+  /** @brief SE2 Pose AD Variable.
+   * The template argument is the base Variable class
+   */
   template <typename VarableSE2_>
   class VariableSE2AD_ : public ADVariable_<VarableSE2_> {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     /*always replicate these typedefs. It's annoying but current compilers aren't smart enough.*/
-    typedef ADVariable_<VarableSE2_> ADVariableType;
-    typedef VarableSE2_ VariableType;
-    typedef typename ADVariableType::ADPerturbationVectorType ADPerturbationVectorType;
-    typedef typename ADVariableType::ADEstimateType ADEstimateType;
+    using VariableType             = VarableSE2_;
+    using ADVariableType           = ADVariable_<VariableType>;
+    using ADPerturbationVectorType = typename ADVariableType::ADPerturbationVectorType;
+    using ADEstimateType           = typename ADVariableType::ADEstimateType;
 
     virtual ~VariableSE2AD_();
     virtual void applyPerturbationAD(const ADPerturbationVectorType& pert);

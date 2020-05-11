@@ -3,7 +3,10 @@
 
 namespace srrg2_solver {
 
-  //! @brief class that does all the shit
+  /**
+   * @brief Helper class for jacobian computation of
+   * SE3 Geodesic Error Function
+   */
   template <typename Scalar_>
   class SE3PosePoseGeodesicErrorFactorJacobianHelper {
   public:
@@ -12,21 +15,26 @@ namespace srrg2_solver {
     using PartialDerivativeMatrixType = Eigen::Matrix<Scalar, 3, 9, Eigen::ColMajor>;
     using JacobianMatrixType          = Eigen::Matrix<Scalar, 6, 6, Eigen::ColMajor>;
 
-    //! @brief object life - everything is super static
+    /**
+     * @brief ctor: object life - everything is super static
+     */
     SE3PosePoseGeodesicErrorFactorJacobianHelper() {
     }
 
-    //! @brief object life - everything is super static
+    /**
+     * @brief dtor: object life - everything is super static
+     */
     ~SE3PosePoseGeodesicErrorFactorJacobianHelper() {
     }
-
-    //! @brief computes the Jacobians for the standard Geodesic error function
-    //!        error vector should be [x y z qx qy qz].
-    //! @param[in] inverse_Z_T_  : inverse measurement
-    //! @param[in] prediction_T_ : h(X) computed as from_T.inverse() * to_T
-    //! @param[in] error_T_      : h(X) - Z computed as Z.inverse() * prediction_T
-    //! @param[out] Ji_ : jacobian wrt vertex[0]
-    //! @param[out] Jj_ : jacobian wrt vertex[1]
+    /**
+     * @brief computes the Jacobians for the standard Geodesic error function
+     *        error vector should be [x y z qx qy qz].
+     * @param[in] inverse_Z_T_  : inverse measurement
+     * @param[in] prediction_T_ : h(X) computed as from_T.inverse() * to_T
+     * @param[in] error_T_      : h(X) - Z computed as Z.inverse() * prediction_T
+     * @param[out] Ji_ : jacobian wrt vertex[0]
+     * @param[out] Jj_ : jacobian wrt vertex[1]
+     */
     static void computeGeodesicJacobians(const IsometryType& inverse_Z_T_,
                                          const IsometryType& prediction_T_,
                                          const IsometryType& error_T_,
@@ -34,7 +42,12 @@ namespace srrg2_solver {
                                          JacobianMatrixType& Jj_);
 
   private:
-    // !@brief computes the derivative case for dq/dR
+    /**
+     * @brief computes the derivative case for dq/dR
+     * @param[out] S : auxiliary variable to pass to other functions
+     * @param[out] qw: w-th quaterion element
+     * @param[in] r{00-22}: elements of the rotation matrix
+     */
     static inline size_t q2m(Scalar& S,
                              Scalar& qw,
                              const Scalar& r00,
@@ -66,7 +79,11 @@ namespace srrg2_solver {
       }
     }
 
-    //! @brief computes the partial derivative of dq/dR
+    /**
+     * @brief computes the partial derivative of dq/dR
+     * @param[out] dq_dR : partial derivative of dq/dR
+     * @param[in] r{11-33}: elements of the rotation matrix
+     */
     static void compute_dq_dR(PartialDerivativeMatrixType& dq_dR,
                               const Scalar& r11,
                               const Scalar& r21,
@@ -100,7 +117,12 @@ namespace srrg2_solver {
       }
     }
 
-    //! @brief computes the *qw* component of dq/dR
+    /**
+     * @brief computes the *qw* component of dq/dR
+     * @param[out] dq_dR_w : *qw* component of dq/dR
+     * @param[in] qw: w-th quaterion element
+     * @param[in] r{00-22}: elements of the rotation matrix
+     */
     static inline void compute_dq_dR_w(PartialDerivativeMatrixType& dq_dR_w,
                                        const Scalar& qw,
                                        const Scalar& r00,
@@ -151,7 +173,12 @@ namespace srrg2_solver {
       dq_dR_w(2, 8) = _aux7;
     }
 
-    //! @brief computes the *qx* component of dq/dR
+    /**
+     * @brief computes the *qx* component of dq/dR
+     * @param[out] dq_dR_x : *qx* component of dq/dR
+     * @param[in] qx: x-th quaterion element
+     * @param[in] r{00-22}: elements of the rotation matrix
+     */
     static inline void compute_dq_dR_x(PartialDerivativeMatrixType& dq_dR_x,
                                        const Scalar& qx,
                                        const Scalar& r00,
@@ -205,7 +232,12 @@ namespace srrg2_solver {
       dq_dR_x(2, 8) = _aux8;
     }
 
-    //! @brief computes the *qy* component of dq/dR
+    /**
+     * @brief computes the *qy* component of dq/dR
+     * @param[out] dq_dR_y : *qy* component of dq/dR
+     * @param[in] qy: y-th quaterion element
+     * @param[in] r{00-22}: elements of the rotation matrix
+     */
     static inline void compute_dq_dR_y(PartialDerivativeMatrixType& dq_dR_y,
                                        const Scalar& qy,
                                        const Scalar& r00,
@@ -259,7 +291,12 @@ namespace srrg2_solver {
       dq_dR_y(2, 8) = _aux8;
     }
 
-    //! @brief computes the *qz* component of dq/dR
+    /**
+     * @brief computes the *qz* component of dq/dR
+     * @param[out] dq_dR_z : *qz* component of dq/dR
+     * @param[in] qz: z-th quaterion element
+     * @param[in] r{00-22}: elements of the rotation matrix
+     */
     static inline void compute_dq_dR_z(PartialDerivativeMatrixType& dq_dR_z,
                                        const Scalar& qz,
                                        const Scalar& r00,
@@ -313,7 +350,14 @@ namespace srrg2_solver {
       dq_dR_z(2, 8) = 0.125 * _aux4;
     }
 
-    //! @brief computes dR/dq
+    /**
+     * @brief computes dR/dq
+     * @param[out] dR_dq : dq/dR
+     * @param[in] qx: x-th quaterion element
+     * @param[in] qy: y-th quaterion element
+     * @param[in] qz: z-th quaterion element
+     * @param[in] qw: w-th quaterion element
+     */
     static inline void compute_dR_dq(PartialDerivativeMatrixType& dR_dq,
                                      const Scalar& qx,
                                      const Scalar& qy,
@@ -365,7 +409,11 @@ namespace srrg2_solver {
       dR_dq(8, 2)   = 0;
     }
 
-    // ia super dummy helpers
+    /**
+     * @brief skew helper function
+     * @param[out] s : skew matrix
+     * @param[in] v: vector to be skew'd
+     */
     template <typename Derived, typename DerivedOther>
     static inline void customSkewT(Eigen::MatrixBase<Derived>& s,
                                    const Eigen::MatrixBase<DerivedOther>& v) {
@@ -387,6 +435,13 @@ namespace srrg2_solver {
       Sz << r21, r22, r23, -r11, -r12, -r13, 0, 0, 0;
     }
 
+    /**
+     * @brief piece-wise skew helper function
+     * @param[out] Sx : x-related skew matrix
+     * @param[out] Sy : y-related skew matrix
+     * @param[out] Sz : z-related skew matrix
+     * @param[in] R: Rotation matrix to be skew'd
+     */
     template <typename Derived, typename DerivedOther>
     static void customSkew(Eigen::MatrixBase<Derived>& Sx,
                            Eigen::MatrixBase<Derived>& Sy,

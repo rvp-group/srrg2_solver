@@ -18,7 +18,7 @@ const size_t n_meas       = 1000;
 const size_t n_iterations = 10;
 
 int main(int argc, char** argv) {
-  registerTypes2D();
+  variables_and_factors_2d_registerTypes();
   solver_registerTypes();
   linear_solver_registerTypes();
 
@@ -101,10 +101,10 @@ TEST(DUMMY_DATA, SE2Point2PointErrorFactor) {
   ASSERT_LT(diff_vector.z(), 1e-5);
 }
 
-TEST(DUMMY_DATA, SE2Point2PointWithSensorErrorFactorAD) {
-  using VariableType         = VariableSE2RightAD;
+TEST(DUMMY_DATA, SE2Point2PointWithSensorErrorFactor) {
+  using VariableType         = VariableSE2Right;
   using VariablePtrType      = std::shared_ptr<VariableType>;
-  using FactorType           = SE2Point2PointWithSensorErrorFactorADCorrespondenceDriven;
+  using FactorType           = SE2Point2PointWithSensorErrorFactorCorrespondenceDriven;
   using FactorPtrType        = std::shared_ptr<FactorType>;
   const Vector3f t           = 10 * Vector3f::Random();
   Vector3f sensor_in_robot_v = Vector3f(0.1, 0.2, 0.5);

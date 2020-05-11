@@ -5,9 +5,18 @@
 namespace srrg2_solver {
   using namespace srrg2_core;
 
+  /** @brief SE3 Pose Variable base class.
+   */
   class VariableSE3Base : public Variable_<6, Isometry3_> {
   public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    /** With this param one can decide whether in the perturbation process, the multiplication must
+     * be performed on the right or on the left side.
+     */
     enum PerturbationSide { Left = 0x1, Right = 0x2 };
+    /** With this param one can decide which angle representation
+     * to choose in the optimization process
+     */
     enum PerturbationType { Quaternion = 0x1, Euler = 0x2 };
 
     virtual void setZero() override;
@@ -15,6 +24,8 @@ namespace srrg2_solver {
     void draw(ViewerCanvasPtr canvas_) const override;
   };
 
+  /** SE3 Pose Variable specialized by the perturbation side and angle representation.
+   */
   template <VariableSE3Base::PerturbationType PerturbationType_ = VariableSE3Base::Euler,
             VariableSE3Base::PerturbationSide PerturbationSide_ = VariableSE3Base::Right>
   class VariableSE3_ : public VariableSE3Base {

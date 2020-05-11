@@ -24,8 +24,7 @@ namespace srrg2_solver {
   }
 
   template <typename VariablePtrTupleType_>
-  void Factor_<VariablePtrTupleType_>::setVariableId(int pos,
-                                                                        VariableBase::Id id_) {
+  void Factor_<VariablePtrTupleType_>::setVariableId(int pos, VariableBase::Id id_) {
     _variables.setGraphId(pos, id_);
   }
 
@@ -53,9 +52,9 @@ namespace srrg2_solver {
 
   template <typename VariablePtrTupleType_>
   void Factor_<VariablePtrTupleType_>::setHTargetBlock(int r,
-                                                            int c,
-                                                            MatrixBlockBase* block,
-                                                            bool is_transposed) {
+                                                       int c,
+                                                       MatrixBlockBase* block,
+                                                       bool is_transposed) {
     int idx = blockOffset(r, c);
     assert(idx >= 0 && idx < NumHBlocks && "setting a block out of bounds");
     _H_blocks[idx]    = block;
@@ -63,9 +62,7 @@ namespace srrg2_solver {
   }
 
   template <typename VariablePtrTupleType_>
-  void
-  Factor_<VariablePtrTupleType_>::setRHSTargetBlock(int r,
-                                                         MatrixBlockBase* block) {
+  void Factor_<VariablePtrTupleType_>::setRHSTargetBlock(int r, MatrixBlockBase* block) {
     assert(r >= 0 && r < NumVariables);
     _b_blocks[r] = block;
   }

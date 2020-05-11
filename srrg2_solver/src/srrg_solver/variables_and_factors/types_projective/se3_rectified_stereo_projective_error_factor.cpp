@@ -10,7 +10,7 @@ namespace srrg2_solver {
     assert(_image_dim.x() > 0);
     assert(_image_dim.y() > 0);
     assert(_camera_matrix.norm() > 0);
-    assert(_baseline_pixels.norm() > 0);
+    assert(_baseline_left_in_right_pixels.norm() > 0);
     _is_valid              = false;
     const Vector3f& moving = *(this->_moving_point);
     const Vector4f& fixed  = *(this->_fixed_point);
@@ -34,7 +34,7 @@ namespace srrg2_solver {
     // ds compute points in image plane (reprojections) - assuming rigid stereo!
     const Vector3f abc_left = _camera_matrix * point_in_camera_left;
     assert(!abc_left.hasNaN());
-    const Vector3f abc_right            = abc_left + _baseline_pixels;
+    const Vector3f abc_right            = abc_left + _baseline_left_in_right_pixels;
     const float& c_left                 = abc_left.z();
     const float& c_right                = abc_right.z();
     const Vector3f point_in_image_left  = abc_left / c_left;
@@ -76,7 +76,7 @@ namespace srrg2_solver {
       // ds regular projective translation gradient contribution
       jacobian_transform.block<3, 3>(0, 0).setIdentity();
     }
-    jacobian_transform.block<3, 3>(0, 3) = -2 * geometry3d::skew(point_in_camera_left);
+    jacobian_transform.block<3, 3>(0, 3) = -2 * geometry3d::skew(moving);
 
     // ds precompute TODO move constant part of transform (rotation on first block) to pose binding
     const Matrix3_6f jacobian_camera_matrix_transform(_camera_matrix * jacobian_transform);
@@ -116,11 +116,11 @@ namespace srrg2_solver {
     assert(_image_dim.x() > 0);
     assert(_image_dim.y() > 0);
     assert(_camera_matrix.norm() > 0);
-    assert(_baseline_pixels.norm() > 0);
+    assert(_baseline_left_in_right_pixels.norm() > 0);
     _is_valid              = false;
     const Vector3f& moving = *(this->_moving_point);
     const Vector4f& fixed  = *(this->_fixed_point);
-    const Isometry3f X     = _variables.at<0>()->estimate() * _camera_left_in_robot;
+    const Isometry3f& X    = _variables.at<0>()->estimate();
     assert(!moving.hasNaN());
     assert(!fixed.hasNaN());
     assert(!X.matrix().hasNaN());
@@ -130,7 +130,8 @@ namespace srrg2_solver {
     assert(disparity_pixels >= 0);
 
     // ds get point into current camera frame based on variable pose
-    const Vector3f point_in_camera_left = X * moving;
+    const Vector3f point_in_robot       = X * moving;
+    const Vector3f point_in_camera_left = _robot_in_camera_left * point_in_robot;
 
     // ds drop points with invalid depth
     if (point_in_camera_left.z() <= 0) {
@@ -140,7 +141,7 @@ namespace srrg2_solver {
     // ds compute points in image plane (reprojections) - assuming rigid stereo!
     const Vector3f abc_left = _camera_matrix * point_in_camera_left;
     assert(!abc_left.hasNaN());
-    const Vector3f abc_right            = abc_left + _baseline_pixels;
+    const Vector3f abc_right            = abc_left + _baseline_left_in_right_pixels;
     const float& c_left                 = abc_left.z();
     const float& c_right                = abc_right.z();
     const Vector3f point_in_image_left  = abc_left / c_left;
@@ -174,7 +175,8 @@ namespace srrg2_solver {
     jacobian_transform.setZero();
     if (_mean_disparity_pixels > 0) {
       // ds consider mean disparity for translation gradient - super empirical madonna
-      // ds note that this coefficient is constant over all iterations and should be moved outside
+      // ds note that this coefficient is constant over all iterations and should be moved
+      // outside
       const float weight_translation =
         std::min(0.1f + disparity_pixels / _mean_disparity_pixels, 1.0f);
       jacobian_transform.block<3, 3>(0, 0) = weight_translation * Matrix3f::Identity();
@@ -182,10 +184,12 @@ namespace srrg2_solver {
       // ds regular projective translation gradient contribution
       jacobian_transform.block<3, 3>(0, 0).setIdentity();
     }
-    jacobian_transform.block<3, 3>(0, 3) = -2 * geometry3d::skew(point_in_camera_left);
+    jacobian_transform.block<3, 3>(0, 3) = -2 * geometry3d::skew(moving);
 
     // ds precompute TODO move constant part of transform (rotation on first block) to pose binding
-    const Matrix3_6f jacobian_camera_matrix_transform(_camera_matrix * jacobian_transform);
+    Matrix3f map_in_sensor_R = (_robot_in_camera_left * X).linear();
+    const Matrix3_6f jacobian_camera_matrix_transform(_camera_matrix * map_in_sensor_R *
+                                                      jacobian_transform);
     assert(!jacobian_camera_matrix_transform.hasNaN());
     const float inverse_c_left          = 1 / c_left;
     const float inverse_c_right         = 1 / c_right;

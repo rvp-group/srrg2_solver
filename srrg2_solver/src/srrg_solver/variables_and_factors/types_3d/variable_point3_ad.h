@@ -4,24 +4,27 @@
 
 namespace srrg2_solver {
 
-using namespace srrg2_core;
+  using namespace srrg2_core;
 
-// point variable with AD
-struct VariablePoint3AD: public ADVariable_<VariablePoint3> {
-  //    typedef typename ADVariable_<VariablePoint3>::ADPerturbationVectorType ADPerturbationVectorType;
-  typedef ADVariable_ <VariablePoint3> ADVariableType;
-  typedef VariablePoint3 VariableType;
-  typedef typename ADVariableType::ADPerturbationVectorType ADPerturbationVectorType;
-  typedef typename ADVariableType::ADEstimateType ADEstimateType;
+  /** @brief 3D Point Variable with autodiff capabilities.
+   */
+  class VariablePoint3AD : public ADVariable_<VariablePoint3> {
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  virtual ~VariablePoint3AD() {};
+    using VariableType             = VariablePoint3;
+    using ADVariableType           = ADVariable_<VariableType>;
+    using ADPerturbationVectorType = typename ADVariableType::ADPerturbationVectorType;
+    using ADEstimateType           = typename ADVariableType::ADEstimateType;
 
-  virtual void setZero() override {
-    setEstimate(Vector3f::Zero());
-  }
+    virtual ~VariablePoint3AD() = default;
 
-  virtual void applyPerturbationAD(const ADPerturbationVectorType& ad_pert) override {
-    _ad_estimate += ad_pert;
-  }
-};
-}
+    virtual void setZero() override {
+      setEstimate(Vector3f::Zero());
+    }
+
+    virtual void applyPerturbationAD(const ADPerturbationVectorType& ad_pert) override {
+      _ad_estimate += ad_pert;
+    }
+  };
+} // namespace srrg2_solver

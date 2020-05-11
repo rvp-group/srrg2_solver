@@ -84,7 +84,6 @@ namespace srrg2_solver {
       updateDiagonal();
 
       istat.lambda = _lambda;
-      ++istat.num_internal_iteration;
       // tg try to solver the system with the current value of lambda
       if (!solveQuadraticForm(istat)) {
         // if fail set actual chi to max
@@ -130,6 +129,7 @@ namespace srrg2_solver {
       ++lm_iteration;
     } while (chi_delta < 0 && lm_iteration < param_lm_iterations_max.value());
 
+    istat.num_internal_iteration = lm_iteration;
     // ia in this way we have a single stat for outer LM iter
     iterationStats().push_back(istat);
 

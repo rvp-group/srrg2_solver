@@ -18,7 +18,7 @@ namespace srrg2_solver {
 
   // this is the function you have to call to initialize
   // the serialization subsystem
-  void registerTypes2D() {
+  void variables_and_factors_2d_registerTypes() {
     BOSS_REGISTER_CLASS(VariableSE2Right);
     BOSS_REGISTER_CLASS(VariableSE2RightAD);
     BOSS_REGISTER_CLASS(VariablePoint2AD);
@@ -33,7 +33,7 @@ namespace srrg2_solver {
     BOSS_REGISTER_CLASS(SE2PriorErrorFactor);
     BOSS_REGISTER_CLASS(SE2Point2PointErrorFactorCorrespondenceDriven);
     BOSS_REGISTER_CLASS(SE2Plane2PlaneErrorFactorCorrespondenceDriven);
-    BOSS_REGISTER_CLASS(SE2Point2PointWithSensorErrorFactorADCorrespondenceDriven);
-    BOSS_REGISTER_CLASS(SE2Plane2PlaneWithSensorErrorFactorADCorrespondenceDriven);
+    BOSS_REGISTER_CLASS(SE2Point2PointWithSensorErrorFactorCorrespondenceDriven);
+    BOSS_REGISTER_CLASS(SE2Plane2PlaneWithSensorErrorFactorCorrespondenceDriven);
   }
 } // namespace srrg2_solver

@@ -7,8 +7,5 @@
 #include "srrg_solver/solver_core/instance_macros.h"
 
 namespace srrg2_solver {
-  using namespace srrg2_core;
-
   INSTANTIATE(DifferentialDriveOdomSensor2DErrorFactorAD)
-
 } // namespace srrg2_solver

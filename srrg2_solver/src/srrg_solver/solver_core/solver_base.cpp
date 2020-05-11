@@ -98,22 +98,16 @@ namespace srrg2_solver {
       std::cerr << FG_YELLOW("SolverBase::prepareForCompute|number of iterations == 0")
                 << std::endl;
     }
-
-    _iteration_stats.reserve(_max_iterations_total);
     _iteration_stats.clear();
+    _iteration_stats.reserve(_max_iterations_total);
 
     if (!param_algorithm.value()) {
       throw std::runtime_error("SolverBase::prepareForCompute|no algorithm set");
-      // algorithm.setValue(std::shared_ptr<IterationAlgorithmBase>(new IterationAlgorithmGN));
     }
     _compute_changed_flag = false;
   }
 
   void SolverBase::compute() {
-    if (_structure_changed_flag) {
-      allocateStructures();
-    }
-
     if (_compute_changed_flag) {
       prepareForCompute();
     }
@@ -124,9 +118,17 @@ namespace srrg2_solver {
       param_termination_criteria->setSolver(this);
     }
     _iteration_stats.clear();
-    _status = SolverBase::SolverStatus::Processing;
-    for (_current_level = 0; _current_level < param_max_iterations.size(); ++_current_level) {
+    _current_iteration = 0;
+    _status            = SolverBase::SolverStatus::Processing;
+    int highest_level  = param_max_iterations.size() - 1;
+    // process the levels from highest to lowest
+    for (_current_level = highest_level; _current_level >= 0; --_current_level) {
       int max_level_iterations = param_max_iterations.value(_current_level);
+      // prevent to cancel the internal structures for no iterations on current level
+      if (!max_level_iterations) {
+        continue;
+      }
+      prepareForNewLevel();
       for (int level_iteration = 0; level_iteration < max_level_iterations; ++level_iteration) {
         // ia perform all the pre-iteration actions
         for (SolverActionBasePtr pre_action : _preiteration_actions) {
@@ -150,8 +152,6 @@ namespace srrg2_solver {
 
         // ia check if we have to stop
         if (tc && tc->hasToStop()) {
-          //          std::cerr << "SolverBase::compute|stopped by termination criteria" <<
-          //          std::endl;
           break;
         }
       }

@@ -10,12 +10,10 @@ namespace srrg2_solver {
   using namespace srrg2_core;
 
   void SE2PosePointErrorFactor::errorAndJacobian(bool error_only) {
-    VariableSE2Right* pose = _variables.at<0>();
-    VariablePoint2* point  = _variables.at<1>();
-    const Isometry2f& X    = pose->estimate();
-    const Vector2f& p      = point->estimate();
-    Vector2f prediction    = X.inverse() * p;
-    _e                     = prediction - this->_measurement;
+    const Isometry2f& X = _variables.at<0>()->estimate();
+    const Vector2f& p   = _variables.at<1>()->estimate();
+    Vector2f prediction = X.inverse() * p;
+    _e                  = prediction - _measurement;
     if (error_only) {
       return;
     }

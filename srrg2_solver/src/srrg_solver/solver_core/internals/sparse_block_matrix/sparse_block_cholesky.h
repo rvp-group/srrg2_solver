@@ -2,50 +2,43 @@
 #include "sparse_block_matrix.h"
 
 namespace srrg2_solver {
-  // block cholesky decomposition
-  // you instantiate it from a block matrix
-  // usage:
-  //  SparseBlockCholesky L(A); // L will be the cholesky matrix
-  //
-  // each time A changes the structure
-  //  L.choleskyAllocate();
-  //
-  // each time A changes the values
-  //  L.choleskyUpdate()
-  //
-  // if you want to solve the linear system
-  //  A x = b
-  //
-  //  SparseBlockCholesky L(A);
-  //  L.choleskyAllocate();
-  //  L.choleskyUpdate()
-  //  L.choleskySolve(x);
-
-
-  class SparseBlockCholesky: public SparseBlockMatrix {
+  /*! @brief Block cholesky matrix,
+   you instantiate it from a SparseBlockMatrix and on construction it computes
+   the Cholesky Factorization of the matrix. Further this class can be used to solve a linear system
+   through choleskySolve()
+  */
+  class SparseBlockCholesky : public SparseBlockMatrix {
   public:
+    /*! Construct the Cholesky factor from block matrix (compute the factorization)
+      @param[in] other block matrix to be factorized
+    */
     SparseBlockCholesky(const SparseBlockMatrix& other = SparseBlockMatrix());
 
-    // allocates the cholesky structure
-    // @ returns false on failure
+    /*! Allocates the cholesky block structure
+     @return false on failure
+    */
     bool choleskyAllocate();
 
-    // updates the cholesky values
-    // @returns false on failure
+    /*! Updates the coefficients
+      @return false on failure
+    */
     bool choleskyUpdate();
 
-    // solve the syste,
-    // @returns false on failure
+    /*! Solve a linear system with target vector x which is the overwritten with then solution
+      @param[in,out] x target vector
+    @return false on failure
+    */
     bool choleskySolve(SparseBlockMatrix& x) const;
 
-    // solve the linear system for a block column
-    // @return false on failure
+    /*! Solve a linear system with target block matrix x which is then overwritten with the
+    solution. The system is solved by columns
+      @param[in,out] x target block matrix
+    @return false on failure
+    */
     bool blockCholeskySolve(IntBlockMap& x) const;
 
   protected:
-    // cholesky stuff
     bool structureScalarColProd(int col_idx_i, int col_idx_j) const;
-    // returns number of operations
     int scalarColProd(MatrixBlockBase* dest, int col_idx_i, int col_idx_j) const;
     enum ErrorType { ErrorWarning, ErrorAbort, ErrorFatal };
     void cholError(ErrorType type,
@@ -56,11 +49,15 @@ namespace srrg2_solver {
     bool forwardSubstitute(float* x) const;
     bool backSubstitute(float* x) const;
 
-    // Block version of back/forward substitutions
+    /*! Block version of forward substitutions
+     @return false on failure
+     */
     bool blockForwardSubstitution(IntBlockMap& x) const;
+    /*! Block version of backward substitutions
+     @return false on failure
+     */
     bool blockBackwardSubstitution(IntBlockMap& x) const;
-    // cache inverse diagonal blocks
-    std::vector<MatrixBlockBasePtr> _inv_Ljj;
 
+    std::vector<MatrixBlockBasePtr> _inv_Ljj; /*!< cache inverse diagonal blocks */
   };
 } // namespace srrg2_solver

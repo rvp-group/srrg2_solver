@@ -4,7 +4,6 @@
 
 namespace srrg2_solver {
   using IntPair = std::pair<int, int>;
-
   // mother of all lineas solvers
   // usage:
   // 1. bind matrix and coefficient vector
@@ -83,7 +82,8 @@ namespace srrg2_solver {
     }
 
     // compute the inverse of specific blocks of A
-    virtual bool computeBlockInverse(SparseBlockMatrix& inverse_blocks) = 0;
+    virtual bool computeBlockInverse(SparseBlockMatrix& inverse_blocks,
+                                     const std::vector<IntPair>& blocks_layout) = 0;
 
   protected:
     // computes the internal structure, given the structure of A
@@ -104,8 +104,9 @@ namespace srrg2_solver {
     Status _status             = Error;
     bool _coefficients_changed = true;
     bool _structure_changed    = true;
-    SparseBlockMatrix* _A      = 0;
-    SparseBlockMatrix* _b      = 0;
+    std::vector<int> _last_ordering;
+    SparseBlockMatrix* _A = 0;
+    SparseBlockMatrix* _b = 0;
     SparseBlockMatrix _x;
   };
 

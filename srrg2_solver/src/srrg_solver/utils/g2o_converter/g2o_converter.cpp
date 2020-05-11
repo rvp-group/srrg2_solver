@@ -78,9 +78,9 @@ namespace srrg2_solver {
     _boss_graph = FactorGraphPtr(new FactorGraph());
 
     solver_registerTypes();
-    registerTypes2D();
-    registerTypes3D();
-    calib_registerTypes();
+    variables_and_factors_2d_registerTypes();
+    variables_and_factors_3d_registerTypes();
+    variables_and_factors_calib_registerTypes();
 
     _registerConverterActions();
   }

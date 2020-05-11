@@ -5,7 +5,8 @@
 #include <vector>
 
 namespace srrg2_solver {
-
+  /*! @brief Quotient graph, which is used to determine the block ordering in a sparse matrix
+    that minimize the fill-in of its factorization */
   class QuotientGraph {
   public:
     enum Policy { Approximate, External, Exact };

@@ -31,7 +31,7 @@ void createFactorGraph(const Isometry2fVector& gt_trajectory_,
                        const bool enable_closures_);
 
 int main(int argc, char** argv) {
-  registerTypes2D();
+  variables_and_factors_2d_registerTypes();
   solver_registerTypes();
 
   testing::InitGoogleTest(&argc, argv);

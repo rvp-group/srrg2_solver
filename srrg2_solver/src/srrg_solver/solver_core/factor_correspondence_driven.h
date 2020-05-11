@@ -3,7 +3,20 @@
 #include <srrg_data_structures/correspondence.h>
 namespace srrg2_solver {
   using namespace srrg2_core;
+  /*! @brief Implements a general interface for data driven factors. Outside a
+    FactorCorrespondenceDriven_ is visible as a standard FactorBase but in fact it acts like a
+    "container" of factors of the same type. This class is a perfect fit for alignment problems
+    where you a typically have lots of factors of the same type connected to a single variable.
+    Indeed this interface allows to scale this concept to factors with an arbitrary number of
+    variables.
 
+    To define your FactorCorrespondenceDriven_ you just need to specify the templates value :
+    - FactorBaseType_ the factor that you want to make data driven
+    - FixedContainerType_ container of the measurements
+    - MovingContainerType_ container of the data that are used togheter with the variables to get a
+    prediction
+    - CorrespondenceContainerType_ container of associations between Fixed and Moving data
+   */
   template <typename FactorBaseType_,
             typename FixedContainerType_,
             typename MovingContainerType_,
@@ -18,48 +31,62 @@ namespace srrg2_solver {
     using FixedItemType               = typename FixedContainerType::value_type;
     using MovingItemType              = typename MovingContainerType::value_type;
     using BaseFactorType              = FactorBaseType_;
-    using InformationMatrixType       = typename FactorBaseType_::InformationMatrixType;
+    using InformationMatrixType = typename FactorBaseType_::InformationMatrixType; /*!< Information
+                                                                                     matrix type */
     using InformationMatrixVector =
-      std::vector<InformationMatrixType, Eigen::aligned_allocator<InformationMatrixType>>;
+      std::vector<InformationMatrixType,
+                  Eigen::aligned_allocator<InformationMatrixType>>; /*!< Container of
+                                                                      information
+                                                                      matrices */
 
+    /*! Set the information matrix container, which should have the same dimension as the Fixed
+      container, so that we ensure that for each correspondence we have an associated information
+      matrix
+      @param[in] information_matrix_vector_ container of information matrices
+    */
     void setInformationMatrixVector(const InformationMatrixVector& information_matrix_vector_) {
       _information_matrix_vector = &information_matrix_vector_;
     }
-
+    /*! Set fixed container
+      @param[in] fixed_ container of data
+    */
     void setFixed(const FixedContainerType& fixed_) {
       _fixed = &fixed_;
     }
-
+    /*! Set moving container
+      @param[in] moving_ container of data
+    */
     void setMoving(const MovingContainerType& moving_) {
       _moving = &moving_;
     }
-
+    /*! Set correspondence container
+      @param[in] correspondence_ container of associations between fixed and moving data
+    */
     void setCorrespondences(const CorrespondenceContainerType& correspondences_) {
       _correspondences = &correspondences_;
       setBegin();
     }
 
-    /*Iterator Interface, for data driven factors*/
-    // sets the iterator to the beginning
+    /*! Set the internal iterator to the beginning of the correspondences */
     void setBegin() override {
       _current_it = _correspondences->begin();
     }
 
-    // true if end is reached
+    /*! @return True if end of the container if reached */
     bool isEnd() override {
       return _current_it == _correspondences->end();
     }
 
-    // number of elements to iterate
+    /*! @return number of elements to iterate */
     size_t size() override {
       return _correspondences->size();
     }
 
-    // gets the current element
+    /*! @return Current factor element */
     FactorBase*& get() override {
       assert(
         (!_information_matrix_vector || _information_matrix_vector->size() == _fixed->size()) &&
-        "FactorCorrespondenceDriven| information matrix vector size mismatch with fixed scene");
+        "FactorCorrespondenceDriven| information matrix vector size mismatch with fixed data");
 
       const int fixed_idx  = _current_it->fixed_idx;
       const int moving_idx = _current_it->moving_idx;
@@ -77,14 +104,16 @@ namespace srrg2_solver {
       return _returned;
     }
 
-    // increments the iterator
+    /*! Increase the internal iterator */
     IteratorInterface_<FactorBase*>& next() override {
       ++_current_it;
       return *this;
     }
 
-    // gets the next and increments the pointer
-    // returns false if at the end of the container
+    /*! Gets the current factor and increments the iterator
+      @param[in] datum current factor
+     @return false if at the end of the container
+    */
     virtual bool getNext(FactorBase*& datum) {
       assert(
         (!_information_matrix_vector || _information_matrix_vector->size() == _fixed->size()) &&
@@ -109,12 +138,14 @@ namespace srrg2_solver {
     }
 
   protected:
-    const FixedContainerType* _fixed                          = 0;
-    const MovingContainerType* _moving                        = 0;
-    const CorrespondenceContainerType* _correspondences       = 0;
-    const InformationMatrixVector* _information_matrix_vector = 0;
-    CorrespondenceIteratorType _current_it;
-    FactorBase* _returned = 0;
+    const FixedContainerType* _fixed   = nullptr; /*!< Fixed data container pointer */
+    const MovingContainerType* _moving = nullptr; /*!< Moving data container pointer */
+    const CorrespondenceContainerType* _correspondences = nullptr;       /*!< Correspondences
+                                                                           container pointer */
+    const InformationMatrixVector* _information_matrix_vector = nullptr; /*!< Information matrix
+                                                                           container pointer */
+    CorrespondenceIteratorType _current_it; /*!< Iterator to the current assocation/factor */
+    FactorBase* _returned = 0;              /*!< Factor to be returned by the interface */
   };
 
 } // namespace srrg2_solver

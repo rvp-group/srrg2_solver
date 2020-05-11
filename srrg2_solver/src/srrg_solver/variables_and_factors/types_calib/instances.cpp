@@ -7,7 +7,7 @@ namespace srrg2_solver {
 
   // this is the function you have to call to initialize
   // the serialization subsystem
-  void calib_registerTypes() {
+  void variables_and_factors_calib_registerTypes() {
     BOSS_REGISTER_CLASS(DifferentialDriveOdomErrorFactorAD);
     BOSS_REGISTER_CLASS(DifferentialDriveOdomSensor2DErrorFactorAD);
     BOSS_REGISTER_CLASS(DifferentialDriveOdomSensor3DErrorFactorAD);

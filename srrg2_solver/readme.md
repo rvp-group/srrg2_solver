@@ -52,6 +52,19 @@ cd <SRRG2_WS_ROOT>
 catkin build srrg2_solver --catkin-make-args tests
 ```
 
+7. [OPTIONAL] build documentation - requires `Doxygen`
+```bash
+sudo apt install doxygen
+cd <SRRG2_SOURCE_ROOT>/srrg2_solver/srrg2_solver/doc
+doxygen Doxygen
+# you can access the documentation via browser ...
+firefox <SRRG2_SOURCE_ROOT>/srrg2_solver/srrg2_solver/doc/html/index.html
+# .. or PDF
+cd <SRRG2_SOURCE_ROOT>/srrg2_solver/srrg2_solver/doc/latex/
+make
+file refman.pdf
+```
+
 ## How to use
 We provide a set of self-explanatory examples that cover both sparse (PGO) and dense (ICP) problems - located in the directory [`examples`](examples).
 In the [`tests`](tests) folder, we provide also highly commented unit-tests that can act as examples of usage. In the [`data`](examples/data) directory, we provide an example of factor graph in `BOSS` format. Finally, in the [`app`](app) directory we provide two executables:

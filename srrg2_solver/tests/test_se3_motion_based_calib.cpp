@@ -36,7 +36,7 @@ Isometry3f randomRelativeIso() {
 }
 
 int main(int argc, char** argv) {
-  registerTypes3D();
+  variables_and_factors_3d_registerTypes();
   solver_registerTypes();
   // linear_solver_registerTypes();
 
@@ -51,9 +51,9 @@ TEST(DUMMY_DATA, SE3PoseMotionErrorFactorAD) {
   using FactorPtrType   = std::shared_ptr<FactorType>;
   using IsometryVector  = std::vector<Isometry3f, Eigen::aligned_allocator<Isometry3f>>;
   // ia generate dummy data
-  const Vector6f minimal_T = 10 * Vector6f::Random();
-  const Isometry3f T       = geometry3d::ta2t(minimal_T);
-  const Isometry3f inv_T   = T.inverse();
+  const Vector6f sensor_in_robot_v     = 10 * Vector6f::Random();
+  const Isometry3f sensor_in_robot     = geometry3d::ta2t(sensor_in_robot_v);
+  const Isometry3f sensor_in_robot_inv = sensor_in_robot.inverse();
 
   IsometryVector measurements, relative_motions;
   CorrespondenceVector correspondences;
@@ -65,12 +65,12 @@ TEST(DUMMY_DATA, SE3PoseMotionErrorFactorAD) {
   for (size_t m = 0; m < n_meas; ++m) {
     Isometry3f rel_sensor_motion = randomRelativeIso();
     relative_motions.emplace_back(rel_sensor_motion);
-    Isometry3f measurement = inv_T * rel_sensor_motion * T;
+    Isometry3f measurement = sensor_in_robot_inv * rel_sensor_motion * sensor_in_robot;
     measurements.emplace_back(measurement);
     correspondences.emplace_back(m, m);
   }
   FactorPtrType factor = FactorPtrType(new FactorType);
-  factor->setVariableId(0,0);
+  factor->setVariableId(0, 0);
   factor->setFixed(measurements);
   factor->setMoving(relative_motions);
   factor->setCorrespondences(correspondences);
@@ -97,7 +97,7 @@ TEST(DUMMY_DATA, SE3PoseMotionErrorFactorAD) {
   ASSERT_LT(final_chi2, 1e-6);
   // ia assert that relative error is good
   const auto& estimated_T = pose->estimate();
-  const auto diff_T       = estimated_T.inverse() * T;
+  const auto diff_T       = estimated_T.inverse() * sensor_in_robot;
   const auto diff_vector  = geometry3d::t2tnq(diff_T);
   ASSERT_LT(diff_vector[0], 1e-5); // ia X
   ASSERT_LT(diff_vector[1], 1e-5); // ia Y

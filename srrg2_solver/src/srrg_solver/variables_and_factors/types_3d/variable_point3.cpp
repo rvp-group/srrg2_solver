@@ -6,19 +6,17 @@
 namespace srrg2_solver {
   using namespace srrg2_core;
 
-  VariablePoint3::~VariablePoint3(){}
-  
-  void VariablePoint3::setZero()  {
-    this->_tainted=true;
+  void VariablePoint3::setZero() {
+    this->_tainted = true;
     _estimate.setZero();
   }
 
   void VariablePoint3::applyPerturbation(const Vector3f& pert) {
-      this->_tainted=true;
+    this->_tainted = true;
     _estimate += pert;
   }
-  
-  void VariablePoint3::draw(ViewerCanvasPtr canvas_) const  {
+
+  void VariablePoint3::draw(ViewerCanvasPtr canvas_) const {
     if (!canvas_)
       throw std::runtime_error("VariablePoint3::draw|invalid canvas");
     canvas_->pushColor();
@@ -27,6 +25,6 @@ namespace srrg2_solver {
     canvas_->popMatrix();
     canvas_->popAttribute();
   }
-  
+
   INSTANTIATE(VariablePoint3)
 } // namespace srrg2_solver

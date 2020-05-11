@@ -15,7 +15,7 @@ using namespace srrg2_solver;
 const size_t n_iterations = 10;
 
 int main(int argc, char** argv) {
-  registerTypes3D();
+  variables_and_factors_3d_registerTypes();
   solver_registerTypes();
   // linear_solver_registerTypes();
 
@@ -76,7 +76,6 @@ TEST(DUMMY_DATA, SE3PriorErrorFactorAD) {
   ASSERT_LT(diff_vector(3), 1e-5);
   ASSERT_LT(diff_vector(4), 1e-5);
   ASSERT_LT(diff_vector(5), 1e-5);
-  
 }
 
 TEST(DUMMY_DATA, SE3PriorOffsetErrorFactorAD) {
@@ -88,15 +87,15 @@ TEST(DUMMY_DATA, SE3PriorOffsetErrorFactorAD) {
   const Vector3f t      = Vector3f::Random();
   Quaternionf q(0.9f, 0.1f, 0.2f, 0.2f);
   q.normalize();
-  //tg choose an offset
-  Vector6f v = Vector6f::Random();
+  // tg choose an offset
+  Vector6f v        = Vector6f::Random();
   Isometry3f offset = geometry3d::v2t(v);
 
   Isometry3f T;
   T.setIdentity();
-  T.linear()      = q.toRotationMatrix();
-  T.translation() = t;
-  Isometry3f Z = offset.inverse() * T * offset;
+  T.linear()           = q.toRotationMatrix();
+  T.translation()      = t;
+  Isometry3f Z         = offset.inverse() * T * offset;
   VariablePtrType pose = VariablePtrType(new VariableType);
   pose->setEstimate(Isometry3f::Identity());
   pose->setGraphId(0);
@@ -106,7 +105,7 @@ TEST(DUMMY_DATA, SE3PriorOffsetErrorFactorAD) {
   FactorPtrType factor = FactorPtrType(new FactorType);
   factor->setVariableId(0, 0);
   factor->setMeasurement(Z);
-  factor->setOffset(offset);
+  factor->setSensorInRobot(offset);
 
   FactorGraphPtr graph(new FactorGraph);
   graph->addFactor(factor);
@@ -136,5 +135,4 @@ TEST(DUMMY_DATA, SE3PriorOffsetErrorFactorAD) {
   ASSERT_LT(diff_vector(3), 1e-5);
   ASSERT_LT(diff_vector(4), 1e-5);
   ASSERT_LT(diff_vector(5), 1e-5);
-  
 }

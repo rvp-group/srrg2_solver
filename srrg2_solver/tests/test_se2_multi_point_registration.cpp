@@ -19,7 +19,7 @@ size_t num_iterations = 20;
 
 int main(int argc, char** argv) {
   solver_registerTypes();
-  registerTypes2D();
+  variables_and_factors_2d_registerTypes();
 
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

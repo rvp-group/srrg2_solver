@@ -3,6 +3,13 @@ add_library(srrg2_solver_projective_library SHARED
             se3_projective_error_factor.cpp se3_projective_error_factor.h
             se3_rectified_stereo_projective_error_factor.cpp se3_rectified_stereo_projective_error_factor.h
             se3_projective_depth_error_factor.cpp se3_projective_depth_error_factor.h
+
+             # ldg similiarity factors
+            variable_sim3.hpp
+            variable_sim3_ad.cpp variable_sim3_ad.h 
+            sim3_point2point_error_factor.cpp sim3_point2point_error_factor.h
+            sim3_pose_pose_error_factor_ad.cpp sim3_pose_pose_error_factor_ad.h
+          
             instances.cpp instances.h
   )
   

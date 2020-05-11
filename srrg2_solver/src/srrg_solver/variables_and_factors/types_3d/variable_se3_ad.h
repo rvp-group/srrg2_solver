@@ -5,8 +5,9 @@
 namespace srrg2_solver {
   using namespace srrg2_core;
 
-  // to declare an ad variable extend and specialize the advariable class
-  // the template argument is a variable  (non autodiff)
+  /** @brief SE3 Pose AD Variable. The template argument is the
+   * base Variable class
+   */
 
   template <typename VarableSE3_>
   class VariableSE3AD_ : public ADVariable_<VarableSE3_> {

@@ -5,15 +5,19 @@
 namespace srrg2_solver {
   using namespace srrg2_core;
 
+  /**
+   * @brief 1D Time autodiff Variable
+   */
+
   class VariableTimeAD : public ADVariable_<VariableTime> {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     /*always replicate these typedefs. It's annoying but current compilers aren't smart enough.*/
-    using ADVariableType = ADVariable_ <VariableTime> ;
-    using VariableType = VariableTime ;
-    using ADPerturbationVectorType = typename ADVariableType::ADPerturbationVectorType ;
-    using ADEstimateType = typename ADVariableType::ADEstimateType ;
+    using VariableType             = VariableTime;
+    using ADVariableType           = ADVariable_<VariableType>;
+    using ADPerturbationVectorType = typename ADVariableType::ADPerturbationVectorType;
+    using ADEstimateType           = typename ADVariableType::ADEstimateType;
 
     virtual ~VariableTimeAD();
 
@@ -22,4 +26,4 @@ namespace srrg2_solver {
     }
   };
 
-}
+} // namespace srrg2_solver

@@ -38,9 +38,9 @@ using namespace srrg2_solver_gui;
 void registerAllTypes() {
   linear_solver_registerTypes();
   solver_registerTypes();
-  registerTypes3D();
-  registerTypes3D();
-  calib_registerTypes();
+  variables_and_factors_2d_registerTypes();
+  variables_and_factors_3d_registerTypes();
+  variables_and_factors_calib_registerTypes();
 }
 
 void generateConfig(const std::string& config_file, const std::string& config_name);

@@ -56,12 +56,10 @@ namespace srrg2_solver {
     void errorAndJacobian(bool error_only = false) final;
 
     inline void setSensorInRobot(const EstimateType& sensor_in_robot_) {
-      _sensor_in_robot = sensor_in_robot_;
-      _robot_in_sensor = _sensor_in_robot.inverse();
+      _robot_in_sensor = sensor_in_robot_.inverse();
     }
 
   protected:
-    EstimateType _sensor_in_robot = Isometry3f::Identity();
     EstimateType _robot_in_sensor = Isometry3f::Identity();
   };
 

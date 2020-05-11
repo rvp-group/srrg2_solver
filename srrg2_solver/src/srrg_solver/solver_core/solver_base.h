@@ -11,13 +11,32 @@ namespace srrg2_solver {
 
   using namespace srrg2_core;
 
-  // motha of all solvers
+  /*! @brief Generic interface for a solver. A solver is characterized by three parameters :
+
+    - max_iterations to perform in the optimization
+    - termination_criteria
+    - algorithm which is the optimization algorithm to use (GN, LM ecc)
+
+    To define your solver you must override :
+    - buildQuadraticForm() which define how to construct the linear system
+     at the current linearization point
+    - solveQuadraticForm() how to solve the linear system
+    - applyPerturbation() how to use the solution to update the variables involved in the problem
+    - push()/pop()/discardTop() how to act on the stack of variables (see VariableBase)
+    - getDiagonal() get diagonal of system matrix
+    - setDiagonal() set diagonal of system matrix
+    - getRHS() getter for target vector
+    - getPerturbation() getter for solution of the linear system
+    - updateChi() evaluate the squared error at the current iteration
+
+    Notice that at this stage SolverBase knows nothing about factor graphs
+  */
   class SolverBase : public Configurable {
     friend class IterationAlgorithmBase;
     friend class TerminationCriteria;
 
   public:
-    //! @brief solver status, to understand whether the optimization was successful or not
+    /*! Solver status, used to understand whether the optimization was successful or not*/
     enum SolverStatus : int { Error = -1, Ready = 0, Processing = 1, Success = 2 };
 
   public:
@@ -42,24 +61,25 @@ namespace srrg2_solver {
     virtual ~SolverBase() {
     }
 
-    //! @brief inline accessors
+    /*! @return Statistics of the last optimization*/
     inline const IterationStatsVector& iterationStats() const {
       return _iteration_stats;
     }
-
+    /*! Clear stats */
     inline void clearIterationStats() {
       _current_iteration = 0;
       _iteration_stats.clear();
     }
-
-    inline const FactorStatsVector& measurementStats() const {
-      return _factor_stats;
+    /*! @return Statistics of the measurements */
+    inline const FactorStatsVector& measurementStats(const int& level_ = 0) const {
+      auto it = _factor_stats.find(level_);
+      return it->second;
     }
-
+    /*! @return Statistics of the last iteration in the optimization */
     inline const IterationStats& lastIterationStats() const {
       return *_iteration_stats.rbegin();
     }
-
+    /*! @return current iteration */
     inline const int& currentIteration() const {
       return _current_iteration;
     }
@@ -68,92 +88,101 @@ namespace srrg2_solver {
       return _status;
     }
 
-    //! @brief installs a pre-iteration action
+    /*! Install a pre-iteration action*/
     void installPreiterationAction(const SolverActionBasePtr& action_);
 
-    //! @brief installs a post-iteration action
+    /*! Install a post-iteration action*/
     void installPostiterationAction(const SolverActionBasePtr& action_);
 
-    // allocates the static structures
+    /*! Allocate matrix block structure */
     virtual void allocateStructures();
 
-    // performs one shot computation before iterations
+    /*! Perform all the operations required to compute, can be overrided if necessary */
     virtual void prepareForCompute();
 
-    //! calls oneRound until a maximum number of iterations is reached
-    //! or the termination criteria, if installed
-    //! tells to stop
+    /*! Solve the optimization problem */
     virtual void compute();
 
   protected:
+    /*! Perform all the operation required to operate on a new level in the hierarchical
+     * optimization */
+    virtual void prepareForNewLevel() {
+      allocateStructures();
+    }
+
     void bindConfigProperties();
 
-    // performs one round of optimization
-    // returns false if something wrong happened
-    // and the iterations are stopped
-    // default implementation calls
-    // - buildQuadraticForm
-    // - solveQuadraticForm
-    // - applyPerturbation (if all went well)
-
-    // this evaluates only the chi2 in the current istats
+    /*! Evaluates the chi square in the current iteration
+     @param[out] istats iteration statistics
+     */
     virtual bool updateChi(IterationStats& istats) = 0;
 
-    // this performs only the linearization of the system;
+    /*! Performs only the linearization of the system
+     @param[out] istats iteration statistics
+     */
     virtual bool buildQuadraticForm(IterationStats& istats) = 0;
 
-    // this performs the solution of the linear system
+    /*! Performs the solution of the linear system
+     @param[out] istats iteration statistics
+     */
     virtual bool solveQuadraticForm(IterationStats& istats) = 0;
 
-    // this applies the current update to the solution
+    /*! Applies the current update to the solution
+     @param[out] istats iteration statistics
+     */
     virtual void applyPerturbation(IterationStats& istats) = 0;
 
-    // accessors to compute levenberg/dogleg
+    /*! @param[out] diagonal of the system matrix*/
     virtual void getDiagonal(std::vector<float>& diagonal) const = 0;
 
-    // accessors to compute levenberg
+    /*! Setter for the diagonal
+      @param[in] diagonal of the system matrix
+    */
     virtual void setDiagonal(const std::vector<float>& diagonal) = 0;
 
-    // right hand side
+    /*! Getter for the target vector in the linear system
+      @param[out] b target vector
+    */
     virtual void getRHS(std::vector<float>& b) const = 0;
 
-    // right perturbation from linear system
+    /*! Getter for the solution of the linear system
+      @param[out] dx solution of the linear system
+    */
     virtual void getPerturbation(std::vector<float>& dx) const = 0;
 
-    // pushes the current estimates
+    /*! Pushes the current estimates values in the stack*/
     virtual void push() = 0;
 
-    // pops the current estimates
+    /*! Pop the current estimates values in the stack*/
     virtual void pop() = 0;
 
-    // discards the last stack entry, without touching the estimate
+    /*! Discards the last stack entry, without touching the estimate */
     virtual void discardTop() = 0;
-
+    /*! Current level of the optimization, used when the problem is hierarchical */
     inline int currentLevel() const {
       return _current_level;
     }
 
-    //! @brief attributes
-    FactorStatsVector _factor_stats;
+    std::map<int, FactorStatsVector>
+      _factor_stats; /*!< Factor stats for each level of the optimization */
     IterationStatsVector _iteration_stats;
-    bool _structure_changed_flag = true;
-    bool _compute_changed_flag   = true;
-    size_t _current_level        = 0;
+    bool _structure_changed_flag = true; /*!< This flag will be set to true if the structure
+                                           of linear system has changed */
+    bool _compute_changed_flag = true;   /*!< This flag will be set to true if the overall
+                                           structure of the problem as changed */
+    int _current_level           = 0;
     size_t _max_iterations_total = 0;
 
-    //! @brief current iteration of the solver (not of the algorithm)
-    int _current_iteration = 0;
+    int _current_iteration = 0; /*!< Current iteration of the solver*/
 
-    //! @brief status of the solver, exposed to let the outside world if everything was ok or not
-    SolverStatus _status = SolverStatus::Ready;
+    SolverStatus _status = SolverStatus::Ready; /*!< Status of the solver, exposed to let the
+                                                   outside world if everything was ok or not */
 
-    //! @brief pre iteration actions containers. each of these actions will be performed BEFORE
-    //!        calling the algorithm OneRound method
-    SolverActionBasePtrSet _preiteration_actions;
+    SolverActionBasePtrSet _preiteration_actions; /*!< Pre iteration actions containers. each of
+             these actions will be performed BEFORE calling the algorithm oneRound() method */
 
-    //! @brief post iteration actions containers. each of these actions will be performed AFTER
-    //!        calling the algorithm OneRound method
-    SolverActionBasePtrSet _postiteration_actions;
+    SolverActionBasePtrSet _postiteration_actions; /*!< Post iteration actions containers. each of
+       these actions will be performed AFTER calling the algorithm oneRound() method */
   };
 
 } // namespace srrg2_solver

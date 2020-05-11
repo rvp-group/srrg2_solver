@@ -31,9 +31,22 @@ namespace srrg2_solver {
     return SparseBlockLinearSolver::SolutionBad;
   }
 
-  bool SparseBlockLinearSolverCholesky::computeBlockInverse(SparseBlockMatrix& inverse_blocks) {
+  bool
+  SparseBlockLinearSolverCholesky::computeBlockInverse(SparseBlockMatrix& inverse_blocks,
+                                                       const std::vector<IntPair>& blocks_layout) {
     std::set<int> interest_row_indicies;
 
+    // fill the matrix with block layout
+    for (const IntPair& row_column_idx : blocks_layout) {
+      MatrixBlockBase* block =
+        inverse_blocks.blockAt(row_column_idx.second, row_column_idx.second, true);
+      block->setIdentity();
+      if (row_column_idx.first != row_column_idx.second) {
+        block = inverse_blocks.blockAt(row_column_idx.first, row_column_idx.second, true);
+        block->setZero();
+      }
+    }
+    // solver linear system
     for (SparseBlockMatrix::IntBlockMap& col : inverse_blocks._cols) {
       if (!col.empty()) {
         for (const auto& row_element : col) {
@@ -43,7 +56,7 @@ namespace srrg2_solver {
         if (!_L.blockCholeskySolve(col)) {
           return false;
         }
-
+        // remove duplicated blocks
         for (auto it = col.begin(); it != col.end(); ++it) {
           const auto& idx_it = interest_row_indicies.find(it->first);
           if (idx_it == interest_row_indicies.end()) {

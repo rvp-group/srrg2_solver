@@ -2,40 +2,68 @@
 #include "factor_base.h"
 
 namespace srrg2_solver {
+  /*! @brief Factor that don't specify how it contribute to the approximate hessian and gradient
+    vector */
+  /*! Middle class for a factor. Derive from this if your measurement is a generic non-Eigen
+      Object, or you want to exploit some special structure of the approximate hessian matrix block
+      computation or Jacobian structure. In the derived class you must implement:
 
-  //! @brief middle class for a factor for a  variable problem constructed out of error
-  //!        functions (ad and non ad). Derive from this if your measurement is a generic non-Eigen
-  //!        Object. you must implement serialization and deserialization
+      - The serialize()/deserialize() functions.
+      - compute() which should fill the approximate hessian matrix/gradient blocks that correspond
+        to the variables involved
+
+      The Factor_ is instantiated on a VariableTupleType_, which is a VariablePtrTuple_ that contain
+      the types of all the variables involved in the factor.
+  */
   template <typename VariableTupleType_>
   class Factor_ : public FactorBase {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    using VariableTupleType                   = VariableTupleType_;
-    static constexpr int NumVariables         = VariableTupleType::NumVariables;
-    static constexpr int TotalPerturbationDim = VariableTupleType::TotalPerturbationDim;
-    using TotalPerturbationVectorType         = Eigen::Matrix<float, TotalPerturbationDim, 1>;
+    using VariableTupleType           = VariableTupleType_;
+    static constexpr int NumVariables = VariableTupleType::NumVariables; /*!<Extract the
+                                         number of variables from VariableTupleType_ */
+    static constexpr int TotalPerturbationDim = VariableTupleType::TotalPerturbationDim; /*!<
+                                                 Extract
+                                                 the total dimension
+                                                 of the perturbation vector
+                                                 of the variables involved in the factor */
+    using TotalPerturbationVectorType = Eigen::Matrix<float, TotalPerturbationDim, 1>;
 
     using ThisType                  = Factor_<VariableTupleType>;
-    static constexpr int NumBBlocks = VariableTupleType::NumVariables; // for clarity
-    static constexpr int NumHBlocks =
-      (VariableTupleType::NumVariables + 1) * (VariableTupleType::NumVariables) / 2;
+    static constexpr int NumBBlocks = NumVariables; /*!< Extract
+                                          number of
+                                          gradient vector
+                                          blocks
+                                          (one for variable) */
+    static constexpr int NumHBlocks = (NumVariables + 1) * (NumVariables) / 2;
+    /*!<
+         Number of approx
+         hessian blocks
+         (the matrix is symmetric)
+       */
 
-    //! @brief returns the linear address of an h block in the underlying triangular matrix
+    /*! Returns the linear address of an H block in the underlying triangular matrix
+      @param[in] r row block index
+      @param[in] c col block index
+      @return block index in the linear structure
+    */
     static constexpr int blockOffset(int r, int c) {
       return (NumVariables * (NumVariables + 1) / 2) -
              (NumVariables - r + 1) * (NumVariables - r) / 2 + c - r;
     }
 
-    //! @brief same as above, to be used as a function within the non template pain
+    /*! Returns the linear address of an H block in the underlying triangular matrix
+      - same as blockOffset(int r, int c) using templates
+
+      @return block index in the linear structure */
     template <int r, int c>
     static constexpr int blockOffset() {
       return blockOffset(r, c);
     }
 
-    //! @brief object life - set everything to zero
+    /*! object life - set all the H and b blocks addresses to zero */
     Factor_() {
-      // we clear the pointers to H and b blocks
       memset(_H_blocks, 0, sizeof(_H_blocks));
       memset(_b_blocks, 0, sizeof(_b_blocks));
       memset(_H_transpose, false, sizeof(_H_transpose));
@@ -44,70 +72,80 @@ namespace srrg2_solver {
     virtual ~Factor_() {
     }
 
-    //! @brief push variables in their stacks
+    // push variables in their stacks
     void pushVariables() override;
 
-    //! @brief pop variables from their stacks
+    // pop variables from their stacks
     void popVariables() override;
 
-    //! @brief number of variables connected by this factor
+    /*! @return number of variables connected by this factor */
     int numVariables() const override {
       return NumVariables;
     }
 
-    //! @brief returns the variable in position pos
+    /*! @return the variable in position pos */
     VariableBase::Id variableId(int pos) const override;
 
-    //! @brief changes the variableID of variable in position pos
+    /*! Changes the variable id of variable in position pos
+      @param[in] pos variable index in VariableTupleType_
+      @param[in] id_ variable graph id
+    */
     void setVariableId(int pos, VariableBase::Id id_) override;
 
-    //! @brief returns the variable at pos
+    /*! Get the variable pointer at position pos
+      @param[in] pos index of the variable in the VariableTupleType_
+      @return variable pointer
+    */
     VariableBase* variable(int pos) override {
       return _variables.variableAt(pos);
     }
 
-    //! @brief returns the variable at pos as const pointer
+    /*!
+      @param[in] pos index of the variable in the VariableTupleType_
+      @return variable pointer (const)
+    */
     const VariableBase* variable(int pos) const override {
       return _variables.variableAt(pos);
     }
 
-    // accessor to the tuple of variable pointers
+    /*! Accessor to the tuple of variable pointers*/
     inline VariableTupleType& variables() {
       return _variables;
     }
 
+    /* taint all the variables in the tuple */
     bool variablesTainted() const override {
       return _variables.tainted();
     }
 
-    //! @brief connects the variables with the corresponding factor.
-    //!        For each factor variable, it looks at its id
-    //!        and queries the factor container if such a variable is already there.
-    //!        If not it creates it.
+    /*! It connect the variables to this factor - see FactorBase */
     int bind(IdVariablePtrContainer& container) override;
 
-    //! @brief checks if this factor is active in the optimization
+    /*! Checks if this factor is active in the optimization */
     bool isActive() const override;
 
-    //! @brief called by solver, it sets the H block for the variable r, c - see FactorBase
+    /*! It sets the H block for the variable r, c - see FactorBase */
     void setHTargetBlock(int r, int c, MatrixBlockBase* block, bool is_transposed) override;
 
-    //! @brief called by solver, it sets the coeff block for the variable r
+    /*! It sets the B block for the variable r - see FactorBase */
     void setRHSTargetBlock(int r, MatrixBlockBase* block) override;
 
-    //! @brief invalidates all assignments made to the taeget blocks
+    /*! Invalidates all assignments made to the target blocks - see FactorBase */
     void clearTargetBlocks() override;
 
   protected:
-    //! @brief sets a variable in the error function
+    /*! Sets a variable in the factor
+      @param[in] pos index in VariableTupleType_
+      @param[in] v variable pointer to be inserted
+    */
     void setVariable(int pos, VariableBase* v) override;
 
   protected:
-    VariableTupleType _variables;
-    //! @brief attributes
-    MatrixBlockBase* _H_blocks[NumHBlocks];
-    bool _H_transpose[NumHBlocks];
-    MatrixBlockBase* _b_blocks[NumBBlocks];
+    VariableTupleType _variables; /*!< Variable container of the factor, see VariablePtrTuple_*/
+    MatrixBlockBase* _H_blocks[NumHBlocks]; /*!< Approximate hessian block pointers */
+    bool _H_transpose[NumHBlocks]; /*< boolean array which tells which blocks of H have to be
+                                      transposed */
+    MatrixBlockBase* _b_blocks[NumBBlocks]; /*!< Approximate hessian block pointers */
   };
 
 } // namespace srrg2_solver

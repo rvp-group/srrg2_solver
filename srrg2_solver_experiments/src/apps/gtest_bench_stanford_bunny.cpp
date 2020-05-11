@@ -44,8 +44,8 @@ float lambda        = 0.0f;
 Isometry3f T;
 
 int main(int argc, char** argv) {
-  registerTypes2D();
-  registerTypes3D();
+  variables_and_factors_2d_registerTypes();
+  variables_and_factors_3d_registerTypes();
   solver_registerTypes();
   linear_solver_registerTypes();
 
@@ -425,8 +425,8 @@ TEST(DUMMY_DATA, PCL_LM) {
   ce->_correspondences = pcl_correspondences;
   icp.setCorrespondenceEstimation(ce);
 
-  pcl::registration::TransformationEstimation<pcl::PointXYZ, pcl::PointXYZ, float>::Ptr
-    te(new pcl::registration::TransformationEstimationLM<pcl::PointXYZ, pcl::PointXYZ, float>);
+  pcl::registration::TransformationEstimation<pcl::PointXYZ, pcl::PointXYZ, float>::Ptr te(
+    new pcl::registration::TransformationEstimationLM<pcl::PointXYZ, pcl::PointXYZ, float>);
   icp.setTransformationEstimation(te);
   pcl::PointCloud<pcl::PointXYZ> Final;
 
@@ -482,5 +482,3 @@ TEST(DUMMY_DATA, PCL_LM) {
     ASSERT_LT(std::sin(diff_vector[i]), 1e-4);
   }
 }
-
-

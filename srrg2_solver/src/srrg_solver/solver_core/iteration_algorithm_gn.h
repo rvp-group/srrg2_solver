@@ -5,7 +5,8 @@
 
 namespace srrg2_solver {
   using namespace srrg2_core;
-
+  /*! @brief Gauss-Netwon optimization algorithm. In our implementation you can set
+    a fixed damping factor to enforce full rank H matrix */
   class IterationAlgorithmGN : public IterationAlgorithmBase {
   public:
     PARAM(PropertyFloat,
@@ -18,6 +19,6 @@ namespace srrg2_solver {
     virtual bool oneRound() override;
 
   protected:
-    std::vector<float> _diagonal;
+    std::vector<float> _diagonal; /*!< Store the diagonal of the H matrix */
   };
 } // namespace srrg2_solver

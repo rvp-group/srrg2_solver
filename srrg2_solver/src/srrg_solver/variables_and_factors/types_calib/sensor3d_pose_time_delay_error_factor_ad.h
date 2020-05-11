@@ -10,6 +10,12 @@ namespace srrg2_solver {
   using TimeIsometryMap  = std::map<float, Isometry3f>;
   using TimeIsometryPair = std::pair<float, Isometry3f>;
 
+  /**
+   * @brief 3D exstrinsic parameters and time delay error factor.
+   * Compute the 3D pose of a sensor mounted on it and the time delay given encoder's readings
+   * and the kinematic model of the robot. The error is computed from the box-minus between the
+   * measured sensor motion and the predicted one using interpolation
+   */
   class SE3SensorPoseTimeDelayErrorFactorAD
     : public ADErrorFactor_<6, VariableTimeAD, VariableSE3QuaternionRightAD> {
   public:
@@ -21,7 +27,7 @@ namespace srrg2_solver {
     using Isometry3adf      = Isometry3_<DualValuef>;
 
     ADErrorVectorType operator()(VariableTupleType& vars) final {
-      this->_is_valid        = true;
+      this->_is_valid                = true;
       const DualValuef& time_delay   = vars.at<0>()->adEstimate()(0);
       const Isometry3adf& extrinsics = vars.at<1>()->adEstimate();
 
@@ -48,13 +54,17 @@ namespace srrg2_solver {
       }
       // bdc compute prediction
       Isometry3adf prediction_ad = extrinsics.inverse() * odom_relative * extrinsics;
-      // bdc convert to DualValues
-      Isometry3adf inverse_measurement_ad = sensor_relative.inverse();
       // bdc compute error
-      e = geometry3d::t2v(inverse_measurement_ad * prediction_ad);
+      e = geometry3d::t2v(sensor_relative.inverse() * prediction_ad);
       return e;
     }
 
+    /**
+     * @brief interpolate dataset at given time
+     * @param[out] Isometry3adf interpolated_ad: interpolated transformation
+     * @param[in] TimeIsometry2Map* data: pointer to dataset
+     * @param[in] DualValuef time: interpolation time
+     */
     bool interpolateInData(Isometry3adf& interpolated_ad,
                            TimeIsometryMap* data_,
                            const DualValuef& time) {
@@ -97,6 +107,13 @@ namespace srrg2_solver {
       return true;
     }
 
+    /**
+     * @brief perform linear interpolation between two poses at a given time
+     * @param[in] DualValuef start_interpolation_time: interpolation time
+     * @param[in] Matrix4adf m_start: starting pose
+     * @param[in] Matrix4adf m_end: ending pose
+     * @return Matrix4adf interpolated transform
+     */
     Matrix4adf linearInterpolate(const DualValuef& start_interpolation_time,
                                  const Matrix4adf& m_start,
                                  const Matrix4adf& m_end) {
@@ -106,6 +123,14 @@ namespace srrg2_solver {
       return result;
     }
 
+    /**
+     * @brief get relative measure
+     * @param[out] Isometry3adf relative_measure_: relative measure
+     * @param[in] TimeIsometryMap data: dataset
+     * @param[in] DualValuef start: starting time
+     * @param[in] DualValuef stop: ending time
+     * @return bool: returns false if anything went wrong
+     */
     bool getRelativeMeasure(Isometry3adf& relative_measure_,
                             TimeIsometryMap* data_,
                             const DualValuef& start,
@@ -135,14 +160,27 @@ namespace srrg2_solver {
         "[SE3PoseTimeErrorFunctorAD::measurement]: YOU DON'T HAVE TO USE THIS FUNCTION");
     }
 
+    /**
+     * @brief set a timestamped odometry map, ordered by timestamp
+     * @param[in] TimeIsometryMap odom_dataset_: relative robot motion dataset
+     */
+
     void setOdomDataset(TimeIsometryMap* odom_dataset_) {
       _odom_dataset = odom_dataset_;
     }
 
+    /**
+     * @brief set a timestamped sensor_pose map, ordered by timestamp
+     * @param[in] TimeIsometryMap sensor_dataset: sensor motion dataset
+     */
     void setSensorDataset(TimeIsometryMap* sensor_dataset_) {
       _sensor_dataset = sensor_dataset_;
     }
 
+    /**
+     * @brief set current time
+     * @param[in] float current_time: time at which to perform interpolation
+     */
     void setCurrentTime(const float& current_time_) {
       _current_time_ad = DualValuef(current_time_);
     }
@@ -152,10 +190,10 @@ namespace srrg2_solver {
     }
 
   protected:
-    DualValuef _current_time_ad;
-    DualValuef _time_period_ad;
-    TimeIsometryMap* _odom_dataset   = 0;
-    TimeIsometryMap* _sensor_dataset = 0;
+    DualValuef _current_time_ad;          /**< current autodiff time*/
+    DualValuef _time_period_ad;           /**< time period autodiff*/
+    TimeIsometryMap* _odom_dataset   = 0; /**< pointer to the robot motion dataset*/
+    TimeIsometryMap* _sensor_dataset = 0; /**< pointer to the sensor motion dataset*/
   };
 
 } // namespace srrg2_solver

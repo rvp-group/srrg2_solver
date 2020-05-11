@@ -14,7 +14,7 @@ using namespace srrg2_core;
 using FactorSE2= SE2PosePoseGeodesicErrorFactor;
 
 void initTypes() {
-  registerTypes2D();
+  variables_and_factors_2d_registerTypes();
   solver_registerTypes();
   linear_solver_registerTypes();
 }

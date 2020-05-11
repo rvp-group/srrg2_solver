@@ -10,7 +10,7 @@ namespace srrg2_solver {
        << "; num_suppressed= " << istat.num_suppressed
        << "; t_iteration= " << istat.t_solve + istat.t_linearize + istat.t_update
        << "; t_linearize= " << istat.t_linearize << "; t_solve= " << istat.t_solve
-       << "; t_update= " << istat.t_update << "; lambda=" << istat.lambda
+       << "; t_update= " << istat.t_update << "; lambda= " << istat.lambda
        << "; internal_iters= " << istat.num_internal_iteration;
     return os;
   }

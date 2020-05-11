@@ -7,5 +7,5 @@
 #include "sensor3d_pose_time_delay_error_factor_ad.h"
 
 namespace srrg2_solver {
-  void calib_registerTypes() __attribute__((constructor)) ;
+  void variables_and_factors_calib_registerTypes() __attribute__((constructor)) ;
 }

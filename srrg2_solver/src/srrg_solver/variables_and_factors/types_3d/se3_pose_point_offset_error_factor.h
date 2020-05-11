@@ -6,6 +6,11 @@
 namespace srrg2_solver {
   using namespace srrg2_core;
 
+  /**
+   * @brief Bundle adjustment + calibartion 3D factor for Pose-Point-Offset estimation.
+   * Error is computed by referring the point in the world frame (inverse pose of the sensor in
+   * world) and computing the difference with the measure
+   */
   class SE3PosePointOffsetErrorFactor : public ErrorFactor_<3,
                                                             VariableSE3QuaternionRight,
                                                             VariablePoint3,

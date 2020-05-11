@@ -35,7 +35,7 @@ template <typename PGOVariableType, typename PGOFactorType_>
 void createFactorGraph(const Isometry3fVector& gt_trajectory_, const FactorGraphPtr& graph_);
 
 int main(int argc, char** argv) {
-  registerTypes3D();
+  variables_and_factors_3d_registerTypes();
   solver_registerTypes();
 
   testing::InitGoogleTest(&argc, argv);

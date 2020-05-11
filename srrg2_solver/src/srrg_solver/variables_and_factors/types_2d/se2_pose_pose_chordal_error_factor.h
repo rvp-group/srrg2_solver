@@ -7,6 +7,10 @@
 namespace srrg2_solver {
   using namespace srrg2_core;
 
+  /** @brief 2D PGO error factor exploiting chordal distance.
+   * Error vector is 6 component (from h(x) - Z)
+   * vertices use EULER angles with increment PRE-multiplied
+   */
   class SE2PosePoseChordalErrorFactor : public ErrorFactor_<6, VariableSE2Right, VariableSE2Right>,
                                         public MeasurementOwnerEigen_<Isometry2f> {
   public:
@@ -14,6 +18,12 @@ namespace srrg2_solver {
     void errorAndJacobian(bool error_only_ = false) final;
 
   protected:
+    /**
+     * @brief Convert the input transformation in a flatten output vector
+     * @param[in] Isometry2f pose to flatten
+     * @return Vector6f flattened pose by stacking informative rows of
+     *         the input transfomration
+     */
     inline Vector6f flattenIsometry(const Isometry2f& T) {
       Vector6f returned;
       returned.setZero();

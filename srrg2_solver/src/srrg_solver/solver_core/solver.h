@@ -9,11 +9,13 @@ namespace srrg2_solver {
 
   using namespace srrg2_core;
 
-
   using VariablePair       = std::pair<VariableBase*, VariableBase*>;
   using VariablePairVector = std::vector<VariablePair>;
   using MatrixBlockVector  = std::vector<MatrixBlockBase*>;
-  // @brief the non linear solver class
+
+  using FactorRawPtrVector      = std::vector<FactorBase*>;
+  using LevelFactorPtrVectorMap = std::map<size_t, FactorRawPtrVector>;
+  /*! @brief Non linear solver acting on factor graphs */
   class Solver : public SolverBase {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -36,51 +38,63 @@ namespace srrg2_solver {
           0);
 
     Solver();
-
+    /*! @return The factor graph interface shared pointer */
     FactorGraphInterfacePtr graph() {
       return _graph;
     }
-
+    /*! @param[in] graph_ factor graph interface shared pointer */
     void setGraph(FactorGraphInterfacePtr graph_) {
       _graph                        = graph_;
       this->_compute_changed_flag   = true;
       this->_structure_changed_flag = true;
     }
 
-    // variables modified during optimization
+    /*! @return Variables modified during the last optimization */
     inline const std::vector<VariableBase*>& activeVariables() const {
       return _active_variables;
     }
 
-    // factors used during optimization
-    inline const std::vector<FactorBase*>& activeFactors() const {
+    /*! @return Factors which were active during the last optimization */
+    inline const LevelFactorPtrVectorMap& activeFactorsPerLevel() const {
       return _active_factors;
     }
-    
-    // getter for the chi square error of the last optimization
-    inline float meanSquareError() const {
-      return _mse_last_iter;
+
+    /*! @return final chi square of the last optimization */
+    inline float chi2() const {
+      return lastIterationStats().chi_normalized;
     }
-    
-    // validates the setup parameters (call once)
+
     void allocateStructures() override;
 
-    // performs the one shot initialization
-    // allocates structures in linear solver
-    // populates active factors and active variables
-    virtual void prepareForCompute() override;
+    void prepareForCompute() override;
 
-    void compute();
-
-    // debug
     void printAllocation() const;
 
-    // get the covariance matrix for a specific variables pair
-    bool computeMarginalCovariance(MatrixBlockVector& covariance_matricies_,
+    /*! Compute the marginal covariance/cross-correlation of a subset of variables
+      @param[out] covariance_matrices_ covariance/cross-correlation blocks
+      @param[in] variables_ vector of variables pair, if a pair contain the same variable the
+      marginal covariance is computed
+      @return false on failure
+    */
+    bool computeMarginalCovariance(MatrixBlockVector& covariance_matrices_,
                                    const VariablePairVector& variables_);
+    /*! Extract blocks of the fisher information matrix (approximate hessian) for a subset of
+      variables
+      @param[out] information_matrices_ fisher information blocks
+      @param[in] variables_ vector of variables pair, for each pair the corresponding block of the
+      approximate hessian is returned
+    */
+    void extractFisherInformationBlocks(MatrixBlockVector& covariance_matrices_,
+                                        const VariablePairVector& variables_);
 
   protected:
+    /*! Assign to each factor type the corresponding robustifier, following the robustifier_policy
+     */
     void assignRobustifiers();
+    void prepareForNewLevel() override;
+    /*! Connect the variables to the corresponding factors in the graph
+      @return false if something goes wrong
+     */
     bool bindFactors();
     bool updateChi(IterationStats& istat) override;
     bool buildQuadraticForm(IterationStats& istat) override;
@@ -94,27 +108,26 @@ namespace srrg2_solver {
     void pop() override;
     void discardTop() override;
 
-    // the ones below are called in init
-    void computeActiveRegion();
+    /*! Determine which factors partecipate to the optimization */
+    void computeActiveFactors();
+    /*! Determine the active variables in the current level of the optimization */
+    void computeActiveVariables();
+    /*! Compute variable ordering */
     void computeOrdering();
+    /*! Allocate approximate hessian and gradient vector blocks */
     void allocateWorkspace();
 
-    SparseBlockMatrix _H; // in place operation
-    SparseBlockMatrix _b; // used also for the update
+    SparseBlockMatrix _H; /*!< Approximate hessian matrix */
+    SparseBlockMatrix _b; /*!< Gradient vector */
 
-    // @brief : Mean Square Error after last optimization
-    float _mse_last_iter;
-
-    // number of effective active factors (include expansion of data-driven ones)
-    int _num_active_factors;
-    
-    // solver interface
-    std::vector<VariableBase*> _active_variables;
-    std::vector<FactorBase*> _active_factors;
-    std::vector<int> _variable_layout;
+    std::vector<VariableBase*> _active_variables; /*!< Container of variables that partecipate to
+                                                     the optimizaion in the current level*/
+    std::map<size_t, std::vector<FactorBase*>>
+      _active_factors; /*!< Container of factors that partecipate to the optimizaion in each level*/
+    std::vector<int> _variable_layout; /*!< Block dimension for each variable */
     std::vector<IntPair> _initial_block_layout;
-    FactorGraphInterfacePtr _graph = 0;
+    FactorGraphInterfacePtr _graph = nullptr;
   };
 
-  using SolverPtr = std::shared_ptr<Solver>;
+  using SolverPtr = std::shared_ptr<Solver>; /*!<Shared pointer to Solver*/
 } // namespace srrg2_solver

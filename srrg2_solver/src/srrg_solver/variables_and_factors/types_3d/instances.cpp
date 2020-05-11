@@ -17,7 +17,7 @@ namespace srrg2_solver {
 
   // this is the function you have to call to initialize
   // the serialization subsystem
-  void registerTypes3D() {
+  void variables_and_factors_3d_registerTypes() {
     BOSS_REGISTER_CLASS(VariablePoint3AD);
     BOSS_REGISTER_CLASS(VariablePoint3);
     BOSS_REGISTER_CLASS(VariableMatchable);
@@ -30,7 +30,7 @@ namespace srrg2_solver {
     BOSS_REGISTER_CLASS(VariableSE3EulerLeft);
     BOSS_REGISTER_CLASS(VariableSE3EulerLeftAD);
     BOSS_REGISTER_CLASS(SE3PoseMotionErrorFactorDataDriven);
-    BOSS_REGISTER_CLASS(SE3RelativeSensorMotionErrorFactorAD);
+
     // ia pose pose
     BOSS_REGISTER_CLASS(SE3PosePoseChordalEulerLeftErrorFactor);
     BOSS_REGISTER_CLASS(SE3PosePoseGeodesicErrorFactor);
@@ -42,14 +42,21 @@ namespace srrg2_solver {
     // // ia pose matchables
     BOSS_REGISTER_CLASS(SE3PoseMatchableEulerLeftErrorFactor);
     BOSS_REGISTER_CLASS(SE3Matchable2MatchableEulerLeftErrorFactor);
-    BOSS_REGISTER_CLASS(SE3Matchable2MatchableEulerLeftErrorFactorCorrespondenceDriven)
+    BOSS_REGISTER_CLASS(SE3Matchable2MatchableEulerLeftErrorFactorCorrespondenceDriven);
 
     // // many factors
     BOSS_REGISTER_CLASS(SE3Plane2PlaneErrorFactor);
     BOSS_REGISTER_CLASS(SE3Plane2PlaneErrorFactorCorrespondenceDriven);
+    BOSS_REGISTER_CLASS(SE3Plane2PlaneWithSensorErrorFactor);
+    BOSS_REGISTER_CLASS(SE3Plane2PlaneWithSensorErrorFactorCorrespondenceDriven);
     BOSS_REGISTER_CLASS(SE3Point2PointErrorFactor);
     BOSS_REGISTER_CLASS(SE3Point2PointErrorFactorCorrespondenceDriven);
+    BOSS_REGISTER_CLASS(SE3Point2PointWithSensorErrorFactor);
+    BOSS_REGISTER_CLASS(SE3Point2PointWithSensorErrorFactorCorrespondenceDriven);
     BOSS_REGISTER_CLASS(SE3PriorErrorFactorAD);
     BOSS_REGISTER_CLASS(SE3PriorOffsetErrorFactorAD);
+
+    // ldg pose-pose-offset factor, maybe useless
+    BOSS_REGISTER_CLASS(SE3PosePoseOffsetErrorFactorAD);
   }
 } // namespace srrg2_solver

@@ -17,5 +17,5 @@
 #include "variable_se2_ad.h"
 
 namespace srrg2_solver {
-  void registerTypes2D() __attribute__((constructor)) ;
+  void variables_and_factors_2d_registerTypes() __attribute__((constructor)) ;
 } // namespace srrg2_solver

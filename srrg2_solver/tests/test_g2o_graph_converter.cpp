@@ -54,8 +54,8 @@ TEST_F(G2OConverterSuite, ConvertG2OtoBOSS) {
 
 void G2OConverterSuite::SetUp() {
   solver_registerTypes();
-  registerTypes2D();
-  registerTypes3D();
+  variables_and_factors_2d_registerTypes();
+  variables_and_factors_3d_registerTypes();
 }
 
 void G2OConverterSuite::TearDown() {

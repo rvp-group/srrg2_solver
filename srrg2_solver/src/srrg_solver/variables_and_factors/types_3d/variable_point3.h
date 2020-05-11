@@ -5,17 +5,20 @@
 namespace srrg2_solver {
   using namespace srrg2_core;
 
-  // point variable
-  struct VariablePoint3 : public Variable_<3, Vector3_> {
+  /** @brief 3D Point Variable.
+   */
+  class VariablePoint3 : public Variable_<3, Vector3_> {
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
     using BaseVariableType = VariablePoint3;
 
-    virtual ~VariablePoint3();
+    virtual ~VariablePoint3() = default;
     virtual void setZero() override;
 
     virtual void applyPerturbation(const Vector3f& pert) override;
 
     void draw(ViewerCanvasPtr canvas_) const override;
-
   };
 
 } // namespace srrg2_solver

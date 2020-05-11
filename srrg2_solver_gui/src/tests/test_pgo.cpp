@@ -24,7 +24,7 @@ using namespace srrg2_qgl_viewport;
 
 // ia register all the types (REQUIRED)
 void registerAllTypes() {
-  registerTypes3D();
+  variables_and_factors_3d_registerTypes();
   solver_registerTypes();
   linear_solver_registerTypes();
 }
@@ -63,7 +63,8 @@ int main(int argc, char** argv) {
       << "and [" << FG_YELLOW(n_factors) << "] factors" << std::endl;
 
   for (size_t i = 1; i < n_variables; ++i) {
-    static_cast<VariableSE3QuaternionRight*>(graph->variable(i))->setEstimate(Isometry3f::Identity());
+    static_cast<VariableSE3QuaternionRight*>(graph->variable(i))
+      ->setEstimate(Isometry3f::Identity());
   }
 
   QApplication qapp(argc, argv);

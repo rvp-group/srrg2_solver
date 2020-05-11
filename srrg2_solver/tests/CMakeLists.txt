@@ -1,10 +1,12 @@
-# tg dominik factors in new format
-catkin_add_gtest(test_se3_posit test_se3_posit.cpp)
-target_link_libraries(test_se3_posit
-  srrg2_solver_projective_library
-  ${catkin_LIBRARIES}
+#tg block inversion
+catkin_add_gtest(test_linear_solver_block_inverse test_linear_solver_block_inverse.cpp)
+target_link_libraries(test_linear_solver_block_inverse
+    srrg2_solver_core_library
+    srrg2_boss_library
+    srrg2_property_library
+    ${catkin_LIBRARIES}
 )
-
+  
 #ia 2D icp test
 catkin_add_gtest(test_se2_icp test_se2_icp.cpp)
 target_link_libraries(test_se2_icp
@@ -130,3 +132,45 @@ target_link_libraries(factor_graph_loop_validator_test
   ${CSPARSE_LIBRARY}
   ${catkin_LIBRARIES}
 )
+
+# tg dominik factors in new format
+catkin_add_gtest(test_se3_posit test_se3_posit.cpp)
+target_link_libraries(test_se3_posit
+  srrg2_solver_projective_library
+  ${catkin_LIBRARIES}
+)
+
+
+ # ldg test pose pose offset with sim3 variable
+ catkin_add_gtest(test_se3_pose_pose_offset_error_factor test_se3_pose_pose_offset_error_factor.cpp)
+ target_link_libraries(test_se3_pose_pose_offset_error_factor
+   srrg2_solver_core_library
+   srrg2_solver_projective_library
+   ${catkin_LIBRARIES}
+ )
+
+
+# ldg test similiarity variable
+catkin_add_gtest(test_sim3 test_sim3.cpp)
+target_link_libraries(test_sim3
+  srrg2_solver_core_library
+  srrg2_solver_projective_library
+  ${catkin_LIBRARIES}
+)
+
+# ldg test pgo with sim3 variable
+catkin_add_gtest(test_sim3_pgo test_sim3_pgo.cpp)
+ target_link_libraries(test_sim3_pgo
+   srrg2_solver_core_library
+   srrg2_solver_projective_library
+   ${catkin_LIBRARIES}
+)
+
+
+# ldg test icp with sim3 variable
+# catkin_add_gtest(test_sim3_icp test_sim3_icp.cpp)
+# target_link_libraries(test_sim3_icp
+#   srrg2_solver_core_library
+#   srrg2_solver_projective_library
+#   ${catkin_LIBRARIES}
+# )

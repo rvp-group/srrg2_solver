@@ -16,9 +16,10 @@ namespace srrg2_solver {
 
     // solves the linear system based on the updated coefficients
     virtual Status updateSolution();
-    
+
     // compute inverse of specific block of A
-    bool computeBlockInverse(SparseBlockMatrix& inverse_blocks) override;
+    bool computeBlockInverse(SparseBlockMatrix& inverse_blocks,
+                             const std::vector<IntPair>& blocks_layout) override;
 
     SparseBlockCholesky _L;
   };

@@ -1,13 +1,20 @@
 #pragma once
 #include "differential_drive_odom_predictor_ad.h"
 #include "srrg_geometry/geometry3d.h"
+#include "srrg_solver/solver_core/ad_error_factor.h"
 #include "srrg_solver/variables_and_factors/types_2d/variable_se2_ad.h"
 #include "srrg_solver/variables_and_factors/types_3d/variable_point3_ad.h"
 #include "srrg_solver/variables_and_factors/types_3d/variable_se3_ad.h"
-#include "srrg_solver/solver_core/ad_error_factor.h"
 
 namespace srrg2_solver {
 
+  /**
+   * @brief Intrinsic and 3D exstrinsic parameters error factor.
+   * Compute the intrinsics parameters of a differential drive robot
+   * [kl, kr, b] and the 3D pose of a sensor mounted on it given encoder's readings and the
+   * kinematic model of the robot. The error is computed from the box-minus between the measured
+   * sensor motion and the predicted one
+   */
   class DifferentialDriveOdomSensor3DErrorFactorAD
     : public ADErrorFactor_<6, VariablePoint3AD, VariableSE3EulerRightAD>,
       public DifferentialDriveOdomPredictorAD,
@@ -16,10 +23,11 @@ namespace srrg2_solver {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     using BaseType             = ADErrorFactor_<6, VariablePoint3AD, VariableSE3EulerRightAD>;
-    using MeasurementOwnerType = MeasurementOwnerEigen_<Isometry3f>;
     using BasePredictorType    = DifferentialDriveOdomPredictorAD;
     using VariableTupleType    = typename BaseType::VariableTupleType;
     using ADErrorVectorType    = typename BaseType::ADErrorVectorType;
+    using MeasurementOwnerType = MeasurementOwnerEigen_<Isometry3f>;
+    using MeasurementTypeAD    = Isometry3_<DualValuef>;
 
     ADErrorVectorType operator()(VariableTupleType& vars) final {
       //! to retrieve a variable you should know the position in the parameter pack
@@ -27,28 +35,24 @@ namespace srrg2_solver {
       const Vector3_<DualValuef>& dd_params       = vars.at<0>()->adEstimate();
       const Isometry3_<DualValuef>& sensor_offset = vars.at<1>()->adEstimate();
 
-      Isometry3_<DualValuef> robot_motion = Isometry3_<DualValuef>::Identity();
-
       Vector3_<DualValuef> robot_motion_2d_v = _predictRobotMotion(dd_params);
 
       Vector6_<DualValuef> robot_motion_3d_v;
       robot_motion_3d_v << robot_motion_2d_v.x(), robot_motion_2d_v.y(), 0, 0, 0,
         robot_motion_2d_v.z();
 
-      robot_motion = srrg2_core::geometry3d::ta2t(robot_motion_3d_v);
+      MeasurementTypeAD robot_motion = srrg2_core::geometry3d::ta2t(robot_motion_3d_v);
 
       Isometry3_<DualValuef> sensor_motion_prediction =
         sensor_offset.inverse() * robot_motion * sensor_offset;
-      Isometry3_<DualValuef> sensor_motion_error_isometry =
-        _ad_measurement_inverse * sensor_motion_prediction;
 
-      return srrg2_core::geometry3d::t2v<DualValuef>(sensor_motion_error_isometry);
+      return srrg2_core::geometry3d::t2v<DualValuef>(_ad_measurement_inverse *
+                                                     sensor_motion_prediction);
     }
 
     void setMeasurement(const Isometry3f& measurement_) override {
-      Isometry3_<DualValuef> ad_measurement;
-      convertMatrix(ad_measurement, _measurement);
-      _ad_measurement_inverse = ad_measurement.inverse();
+      MeasurementOwnerType::setMeasurement(measurement_);
+      convertMatrix(_ad_measurement_inverse, _measurement.inverse());
     }
 
     void serialize(ObjectData& odata, IdContext& context) override {
@@ -71,6 +75,7 @@ namespace srrg2_solver {
     }
 
   protected:
-    Isometry3_<DualValuef> _ad_measurement_inverse;
+    MeasurementTypeAD _ad_measurement_inverse =
+      MeasurementTypeAD::Identity(); /**< Cache inverse autodiff measurement */
   };
 } // namespace srrg2_solver

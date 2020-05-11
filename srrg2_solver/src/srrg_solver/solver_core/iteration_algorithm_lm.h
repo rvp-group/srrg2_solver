@@ -5,7 +5,7 @@
 
 namespace srrg2_solver {
   using namespace srrg2_core;
-
+  /*! @brief Levenberg–Marquardt optimization algorithm */
   class IterationAlgorithmLM : public IterationAlgorithmBase {
   public:
     PARAM(PropertyFloat,
@@ -32,22 +32,34 @@ namespace srrg2_solver {
     virtual bool oneRound() override;
 
   protected:
+    /*! Compute the squared error variation in the linear model. The ratio between the variation
+      of the non-linear model and this scale determine if the lm iteration was successful or not
+      @return linear error model variation
+     */
     float computeScale();
+    /*! Compute initial value for the dumping factor
+      @return Initial damping
+    */
     float computeLambdaInit();
+    /*! Update diagonal with new damping */
     void updateDiagonal();
+    /*! Limit the reduction factor for the dumping after a succesful iteration */
     void cropScale(float& value_);
 
-    //@brief initial diagonal
-    std::vector<float> _diagonal;
-    //@brief current diagonal considering the actual lambda
-    std::vector<float> _current_diagonal;
-    // @brief perturbation vector
-    std::vector<float> _dx;
-    // @brief RHS vector
-    std::vector<float> _b;
-    // @brief read the name
-    float _lambda = 0.;
-    // @brief lambda factor when the chi increase after an lm iteration
-    float _ni = 2.;
+    std::vector<float> _diagonal; /*!< Initial diagonal of the H matrix*/
+
+    std::vector<float> _current_diagonal; /*!< Current diagonal
+                                            considering the actual lambda */
+
+    std::vector<float> _dx; /*!< Perturbation vector */
+
+    std::vector<float> _b; /*!< Target vector */
+
+    float _lambda = 0.; /*!< Current dumping factor */
+
+    float _ni = 2.; /*!< When the chi increase after an lm iteration
+                      the damping is multiplied by _ni.
+                      Further for each failure _ni is doubled */
   };
+
 } // namespace srrg2_solver

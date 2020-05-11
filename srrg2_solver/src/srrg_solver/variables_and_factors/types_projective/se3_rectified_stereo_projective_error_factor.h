@@ -35,8 +35,8 @@ namespace srrg2_solver {
       _image_dim = image_dim_;
     }
 
-    inline void setBaselinePixels(const srrg2_core::Vector3f& baseline_pixels_) {
-      _baseline_pixels = baseline_pixels_;
+    inline void setBaselineLeftInRightPixels(const srrg2_core::Vector3f& baseline_pixels_) {
+      _baseline_left_in_right_pixels = baseline_pixels_;
     }
 
     inline void setMeanDisparityPixels(const float& mean_disparity_pixels_) {
@@ -44,12 +44,12 @@ namespace srrg2_solver {
     }
 
   protected:
-    const Vector3f* _moving_point         = nullptr;
-    const Vector4f* _fixed_point          = nullptr;
-    float _mean_disparity_pixels          = 0;
-    srrg2_core::Vector3f _baseline_pixels = srrg2_core::Vector3f::Zero();
-    srrg2_core::Matrix3f _camera_matrix   = srrg2_core::Matrix3f::Identity();
-    srrg2_core::Vector2f _image_dim       = srrg2_core::Vector2f::Zero();
+    const Vector3f* _moving_point                       = nullptr;
+    const Vector4f* _fixed_point                        = nullptr;
+    float _mean_disparity_pixels                        = 0;
+    srrg2_core::Vector3f _baseline_left_in_right_pixels = srrg2_core::Vector3f::Zero();
+    srrg2_core::Matrix3f _camera_matrix                 = srrg2_core::Matrix3f::Identity();
+    srrg2_core::Vector2f _image_dim                     = srrg2_core::Vector2f::Zero();
   };
 
   // correspondence factor
@@ -71,12 +71,10 @@ namespace srrg2_solver {
 
     //! @brief with sensor you refer to camera left
     inline void setSensorInRobot(const EstimateType& camera_left_in_robot_) {
-      _camera_left_in_robot = camera_left_in_robot_;
-      _robot_in_camera_left = _camera_left_in_robot.inverse();
+      _robot_in_camera_left = camera_left_in_robot_.inverse();
     }
 
   protected:
-    EstimateType _camera_left_in_robot = Isometry3f::Identity();
     EstimateType _robot_in_camera_left = Isometry3f::Identity();
   };
 

@@ -19,7 +19,7 @@ const size_t n_meas       = 1000;
 const size_t n_iterations = 20;
 
 int main(int argc, char** argv) {
-  registerTypes2D();
+  variables_and_factors_2d_registerTypes();
   solver_registerTypes();
   // linear_solver_registerTypes();
 
@@ -36,7 +36,6 @@ TEST(DUMMY_DATA, SE2Plane2PlaneErrorFactor) {
 
   const Vector3f minimal_T = 10 * Vector3f::Random();
   const Isometry2f T       = geometry2d::v2t(minimal_T);
-  const Isometry2f inv_T   = T.inverse();
 
   PointNormal2fVectorCloud fixed_cloud;
   PointNormal2fVectorCloud moving_cloud;
@@ -49,7 +48,7 @@ TEST(DUMMY_DATA, SE2Plane2PlaneErrorFactor) {
     fixed_point.coordinates().setRandom();
     fixed_point.normal().setRandom();
     fixed_point.normal().normalize();
-    moving_point = fixed_point.transform<TRANSFORM_CLASS::Isometry>(inv_T);
+    moving_point = fixed_point.transform<TRANSFORM_CLASS::Isometry>(T);
     fixed_cloud.emplace_back(fixed_point);
     moving_cloud.emplace_back(moving_point);
     correspondences.emplace_back(m, m);
@@ -83,7 +82,7 @@ TEST(DUMMY_DATA, SE2Plane2PlaneErrorFactor) {
   ASSERT_LT(final_chi2, 1e-6);
   // ia assert that relative error is good
   const auto& estimated_T    = pose->estimate();
-  const Isometry2f diff_T    = estimated_T.inverse() * T;
+  const Isometry2f diff_T    = estimated_T * T;
   const Vector3f diff_vector = geometry2d::t2v(diff_T);
 
   ASSERT_LT(diff_vector.x(), 1e-5);
@@ -92,10 +91,10 @@ TEST(DUMMY_DATA, SE2Plane2PlaneErrorFactor) {
   LOG << stats << std::endl;
 }
 
-TEST(DUMMY_DATA, SE2Plane2PlaneWithSensorErrorFactorAD) {
-  using VariableType    = VariableSE2RightAD;
+TEST(DUMMY_DATA, SE2Plane2PlaneWithSensorErrorFactor) {
+  using VariableType    = VariableSE2Right;
   using VariablePtrType = std::shared_ptr<VariableType>;
-  using FactorType      = SE2Plane2PlaneWithSensorErrorFactorADCorrespondenceDriven;
+  using FactorType      = SE2Plane2PlaneWithSensorErrorFactorCorrespondenceDriven;
   using FactorPtrType   = std::shared_ptr<FactorType>;
   using SolverType      = Solver;
 

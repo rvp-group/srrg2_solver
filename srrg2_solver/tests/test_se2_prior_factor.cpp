@@ -22,7 +22,7 @@ using SolverType      = Solver;
 const size_t n_iterations = 10;
 
 int main(int argc, char** argv) {
-  registerTypes2D();
+  variables_and_factors_2d_registerTypes();
   solver_registerTypes();
   linear_solver_registerTypes();
 

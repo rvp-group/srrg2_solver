@@ -67,7 +67,7 @@ namespace srrg2_solver {
     }
   };
 
-  Solver::Solver() : _mse_last_iter(0), _num_active_factors(0) {
+  Solver::Solver() {
     addCommand(new CommandLoadGraph(this));
     addCommand(new CommandSaveGraph(this));
     MatrixBlockFactory* factory = MatrixBlockFactory::instance();
@@ -99,29 +99,27 @@ namespace srrg2_solver {
     factory->addAllocator<12, 12>();
     factory->addAllocator<12, 1>();
     factory->addAllocator<1, 12>();
+
+    // ldg allocator for similiarities
+    factory->addAllocator<7, 7>();
+    factory->addAllocator<7, 1>();
+    factory->addAllocator<1, 7>();
   }
 
   void Solver::allocateStructures() {
-    // cerr << "allocateStructures!" << endl;
-    // assert(config() && "config not set");
-    if (!_structure_changed_flag) {
-      return;
-    }
-
     if (!param_linear_solver.value())
       throw std::runtime_error("Solver::allocateStructures|ERROR, no linear solver set");
-
     param_linear_solver.value()->bindLinearSystem(&_H, &_b);
     SolverBase::allocateStructures();
   }
 
-  void Solver::computeActiveRegion() {
+  void Solver::computeActiveFactors() {
     // we determine the active factors:
     // a factor is active if
     // at least one variable in it is active and no variables are non_active
     // in doing so we reset the indices of all variables encountered
     _active_factors.clear();
-    _num_active_factors         = 0;
+    std::map<int, int> num_active_factors_per_level;
     IdFactorPtrContainer& facts = _graph->factors();
     for (auto it = facts.begin(); it != facts.end(); ++it) {
       FactorBase* f = const_cast<FactorBase*>(it.value());
@@ -133,6 +131,11 @@ namespace srrg2_solver {
       bool all_fixed = true;
       for (int pos = 0; pos < f->numVariables(); ++pos) {
         VariableBase* const v = f->variable(pos);
+        if (!v) {
+          std::cerr << "Solver::computeActiveRegion| unable to cast variable for factor #"
+                    << f->graphId() << ". Check VariableType assigned to factor" << std::endl;
+          throw std::runtime_error("cast failed");
+        }
         assert(v && "variable null at factor");
         v->_hessian_index = -1;
         switch (v->status()) {
@@ -146,23 +149,41 @@ namespace srrg2_solver {
         }
       }
       if (is_active && !all_fixed) {
-        _active_factors.push_back(f);
-        _num_active_factors += f->size();
+        size_t level = f->level();
+        _active_factors[level].push_back(f);
+        num_active_factors_per_level.insert(std::make_pair(level, 0));
+        num_active_factors_per_level[level] += f->size();
       }
     }
+    _factor_stats.clear();
+    for (const auto& level_num_factors : num_active_factors_per_level) {
+      FactorStatsVector stats;
+      stats.resize(level_num_factors.second);
+      _factor_stats[level_num_factors.first] = stats;
+    }
+  }
 
+  void Solver::computeActiveVariables() {
     // we scan the active factors and populate the
     // active variables (non fixed)
     _active_variables.clear();
-    for (auto it = _active_factors.begin(); it != _active_factors.end(); ++it) {
+    // auxiliary set to garanty that the same variable doesnt appear
+    // multiple times in the same level
+    std::set<VariableBase::Id> variables_attendance_register;
+    const std::vector<FactorBase*>& active_factors_level = _active_factors[this->currentLevel()];
+    for (auto it = active_factors_level.begin(); it != active_factors_level.end(); ++it) {
       FactorBase* f = *it;
-      assert(f && "active factor null");
+      assert(f && "Solver::computeActiveRegion|active factor null");
       for (int pos = 0; pos < f->numVariables(); ++pos) {
         VariableBase* v = f->variable(pos);
-        assert(v && "variable at active factor null");
-        if (v->status() == VariableBase::Active && v->_hessian_index < 0) {
+        assert(v && "Solver::computeActiveRegion|variable at active factor null");
+        if (v->status() == VariableBase::Active &&
+            !variables_attendance_register.count(v->graphId())) {
           v->_hessian_index = _active_variables.size();
           _active_variables.push_back(v);
+          variables_attendance_register.insert(v->graphId());
+        } else if (v->status() != VariableBase::Active) {
+          v->_hessian_index = -1;
         }
       }
     }
@@ -170,21 +191,25 @@ namespace srrg2_solver {
 
   void Solver::computeOrdering() {
     std::vector<IntPair> block_layout;
-
-    for (auto it = _active_factors.begin(); it != _active_factors.end(); ++it) {
+    auto it = _active_factors.find(this->currentLevel());
+    if (it == _active_factors.end()) {
+      return;
+    }
+    std::vector<FactorBase*>& active_factors_level = it->second;
+    for (auto it = active_factors_level.begin(); it != active_factors_level.end(); ++it) {
       FactorBase* factor = *it;
-      assert(factor && "factor null");
+      assert(factor && "Solver::computeOrdering|factor null");
       int nvars = factor->numVariables();
       for (int r = 0; r < nvars; ++r) {
         VariableBase* var_r = factor->variable(r);
-        assert(var_r && "var_r null");
+        assert(var_r && "Solver::computeOrdering|var_r null");
         if (var_r->_hessian_index < 0) {
           continue;
         }
         int idx_r = var_r->_hessian_index;
         for (int c = r; c < nvars; ++c) {
           VariableBase* var_c = factor->variable(c);
-          assert(var_c && "var_c null");
+          assert(var_c && "Solver::computeOrdering|var_c null");
           if (var_c->_hessian_index < 0) {
             continue;
           }
@@ -205,14 +230,12 @@ namespace srrg2_solver {
     // remove duplicates
     std::vector<IntPair>::iterator last = std::unique(block_layout.begin(), block_layout.end());
     block_layout.erase(last, block_layout.end());
+    // compute ordering
     std::vector<int> ordering;
     ordering.resize(_active_variables.size());
     SparseBlockLinearSolverPtr _linear_solver = param_linear_solver.value();
-    //    std::cerr << "computing ordering" << std::endl;
     _linear_solver->computeOrderingHint(ordering, block_layout);
-    //    std::cerr << "done" << std::endl;
     std::vector<VariableBase*> src(_active_variables);
-    // reorder the variables, by reassigning the indices
     for (size_t i = 0; i < _active_variables.size(); ++i) {
       _active_variables[i] = src[ordering[i]];
     }
@@ -231,6 +254,8 @@ namespace srrg2_solver {
   void Solver::allocateWorkspace() {
     // we determine the block layout of the linear system
     // and reassign the indices based on the ordering in _active_variables
+    _variable_layout.clear();
+    std::vector<FactorBase*>& active_factors_level = _active_factors[this->currentLevel()];
     _variable_layout.resize(_active_variables.size());
     for (size_t i = 0; i < _active_variables.size(); ++i) {
       VariableBase* var   = _active_variables[i];
@@ -243,16 +268,13 @@ namespace srrg2_solver {
     _b = SparseBlockMatrix(_variable_layout, std::vector<int>(1, 1));
     // 4. populate the target indices of all factors with the right
     //   H and b blocks
-    for (auto it = _active_factors.begin(); it != _active_factors.end(); ++it) {
+    for (auto it = active_factors_level.begin(); it != active_factors_level.end(); ++it) {
       FactorBase* factor = *it;
       factor->clearTargetBlocks();
-      // cerr << "factor: " << it->first << " nvars: " << factor->numVariables()
-      // << endl;
 
       int nvars = factor->numVariables();
       for (int r = 0; r < nvars; ++r) {
         VariableBase* row_var = factor->variable(r);
-        // cerr << "B[" << r << "]: " << row_var;
         if (row_var->_hessian_index < 0) {
           continue;
         }
@@ -286,7 +308,8 @@ namespace srrg2_solver {
   }
 
   void Solver::assignRobustifiers() {
-    for (auto it = _active_factors.begin(); it != _active_factors.end(); ++it) {
+    std::vector<FactorBase*>& active_factors_level = _active_factors[this->currentLevel()];
+    for (auto it = active_factors_level.begin(); it != active_factors_level.end(); ++it) {
       FactorBase* factor = *it;
       for (size_t i = 0; i < param_robustifier_policies.size(); ++i) {
         RobustifierPolicyBasePtr policy = param_robustifier_policies.value(i);
@@ -322,50 +345,21 @@ namespace srrg2_solver {
   }
 
   void Solver::prepareForCompute() {
-    // cerr << "prepareForCompute!" << endl;
     assert(param_linear_solver.value() && "Solver::prepareForCompute|linear solver not in");
     assert(_graph && "Solver::prepareForCompute|graph not set");
-
     if (!bindFactors()) {
       return;
     }
-
-    using namespace std;
-    // 2. determine the active variables, and clear the hessian indices
-    //   populates _active_variables
-    computeActiveRegion();
-
-    assignRobustifiers();
-
-    // 3. compute an initial ordering based on
-    computeOrdering();
-
-    // 5. we allocate the H workspace
-    allocateWorkspace();
-    // std::cerr << "workspace allocated!" << std::endl;
-
-    // cerr << "CF "<< config() << endl;
-    // cerr << "LS "<< linear_solver.value() << endl;
-    // cerr << "LS_CF "<< linear_solver.value()->config() << endl;
-    // cerr << "TC "<< termination_criteria.value() << endl;
-    // cerr << "TC_CF "<< termination_criteria.value()->config() << endl;
-    // cerr << "STATS "<< max_iterations.value() << endl;
-    // 6. resize statistics and get ready
-    _factor_stats.resize(_num_active_factors);
+    computeActiveFactors();
     SolverBase::prepareForCompute();
   }
 
-  void Solver::compute() {
-    prepareForCompute();
-    IterationStats sentinel_iter;
-    updateChi(sentinel_iter);
-    float mse_sentinel  = sentinel_iter.chi_inliers / (sentinel_iter.num_inliers + 1e-8);
-    float mse_variation = mse_sentinel - _mse_last_iter;
-    if (std::fabs(mse_variation) > param_mse_threshold.value()) {
-      SolverBase::compute();
-      const IterationStats& last_iter = _iteration_stats.back();
-      _mse_last_iter                  = last_iter.chi_inliers / (last_iter.num_inliers + 1e-8);
-    }
+  void Solver::prepareForNewLevel() {
+    assignRobustifiers();
+    computeActiveVariables();
+    computeOrdering();
+    allocateWorkspace();
+    SolverBase::prepareForNewLevel();
   }
 
   bool Solver::computeMarginalCovariance(MatrixBlockVector& covariance_matricies_,
@@ -380,18 +374,20 @@ namespace srrg2_solver {
     SparseBlockMatrix x(_H.blockRowDims(), _H.blockColDims());
     covariance_matricies_.clear();
     covariance_matricies_.reserve(variables_.size());
-
+    // tg compute blocks to be inverted based on the variables hessian indices
+    std::vector<IntPair> block_structure;
+    block_structure.reserve(variables_.size());
     for (const VariablePair& vp : variables_) {
-      MatrixBlockBase* block =
-        x.blockAt(vp.second->_hessian_index, vp.second->_hessian_index, true);
-      block->setIdentity();
-      if (vp.first != vp.second) {
-        block = x.blockAt(vp.first->_hessian_index, vp.second->_hessian_index, true);
-        block->setZero();
-      }
+      block_structure.emplace_back(vp.first->_hessian_index, vp.second->_hessian_index);
     }
-
-    if (!_linear_solver->computeBlockInverse(x)) {
+    // tg sort blocks
+    std::sort(block_structure.begin(),
+              block_structure.end(),
+              [](const IntPair& a, const IntPair& b) -> bool {
+                return a.second < b.second || (a.second == b.second && a.first < b.first);
+              });
+    // compute block inverse
+    if (!_linear_solver->computeBlockInverse(x, block_structure)) {
       return false;
     }
 
@@ -408,6 +404,27 @@ namespace srrg2_solver {
     return true;
   }
 
+  void Solver::extractFisherInformationBlocks(MatrixBlockVector& information_matricies_,
+                                              const VariablePairVector& variables_) {
+    assert(param_linear_solver.value() &&
+           "Solver::extractFisherInformationBlocks|linear solver not in");
+    assert(_graph && "Solver::extractFisherInformationBlocks|no graph set");
+    if (_iteration_stats.empty()) {
+      throw std::runtime_error("Solver::extractFisherInformationBlocks|need to call compute() ");
+    }
+    information_matricies_.clear();
+    information_matricies_.reserve(variables_.size());
+    for (const VariablePair& vp : variables_) {
+      MatrixBlockBase* info_block =
+        _H.blockRelease(vp.first->_hessian_index, vp.second->_hessian_index);
+      if (!info_block) {
+        throw std::runtime_error("Solver::extractFisherInformationBlocks | no block found, maybe "
+                                 "you ask two times the same variables covariance");
+      }
+      information_matricies_.emplace_back(info_block);
+    }
+  }
+
   bool Solver::updateChi(IterationStats& istat) {
     SystemUsageCounter::tic();
     istat.iteration      = _current_iteration;
@@ -418,21 +435,24 @@ namespace srrg2_solver {
     istat.chi_outliers   = 0;
     istat.num_suppressed = 0;
     istat.chi_normalized = 0;
-    int factor_idx       = 0;
-    istat.level          = this->currentLevel();
-    for (auto it = _active_factors.begin(); it != _active_factors.end(); ++it) {
+    // tg I have to do this to get the proper index in the vector of factors stats
+    size_t current_level = this->currentLevel();
+    // tg get proper initial index in factors stats
+    int factor_idx                                 = 0;
+    istat.level                                    = current_level;
+    std::vector<FactorBase*>& active_factors_level = _active_factors[current_level];
+    FactorStatsVector& factor_level_stats          = _factor_stats[current_level];
+    for (auto it = active_factors_level.begin(); it != active_factors_level.end(); ++it) {
       FactorBase* outer_factor = *it;
       outer_factor->setBegin();
       FactorBase* factor;
       while (outer_factor->getNext(factor)) {
-        factor->setCurrentLevel(this->currentLevel());
-
         if (factor->variablesTainted()) {
           factor->compute(chi_only);
         }
 
-        _factor_stats[factor_idx] = factor->stats();
-        FactorStats& mstat        = _factor_stats[factor_idx];
+        factor_level_stats[factor_idx] = factor->stats();
+        FactorStats& mstat             = factor_level_stats[factor_idx];
         ++factor_idx;
         switch (mstat.status) {
           case FactorStats::Status::Inlier:
@@ -466,25 +486,28 @@ namespace srrg2_solver {
   }
 
   bool Solver::buildQuadraticForm(IterationStats& istat) {
-    // cerr << "Linearize... ";
     _H.setZero();
     _b.setZero();
 
     istat.reset();
     istat.iteration = _current_iteration;
-    istat.level     = this->currentLevel();
-    // std::cerr << "QF_level: " << this->currentLevel() << std::endl;
+    // tg I have to do this to get the proper index in the vector of factors stats
+    // tg I have to do this to get the proper index in the vector of factors stats
+    size_t current_level = this->currentLevel();
+    // tg get proper initial index in factors stats
+    int factor_idx                                 = 0;
+    istat.level                                    = current_level;
+    std::vector<FactorBase*>& active_factors_level = _active_factors[current_level];
+    FactorStatsVector& factor_level_stats          = _factor_stats[current_level];
     SystemUsageCounter::tic();
-    int factor_idx = 0;
-    for (auto it = _active_factors.begin(); it != _active_factors.end(); ++it) {
+    for (auto it = active_factors_level.begin(); it != active_factors_level.end(); ++it) {
       FactorBase* outer_factor = *it;
       FactorBase* factor;
       outer_factor->setBegin();
       while (outer_factor->getNext(factor)) {
-        factor->setCurrentLevel(this->currentLevel());
         factor->compute();
-        _factor_stats[factor_idx] = factor->stats();
-        FactorStats& mstat        = _factor_stats[factor_idx];
+        factor_level_stats[factor_idx] = factor->stats();
+        FactorStats& mstat             = factor_level_stats[factor_idx];
         ++factor_idx;
         switch (mstat.status) {
           case FactorStats::Status::Inlier:

@@ -33,7 +33,7 @@ void createGTTrajectory(const size_t& n_poses_,
                         Isometry3fVector& gt_trajectory_,
                         Vector3fVector& landmarks);
 int main(int argc, char** argv) {
-  registerTypes3D();
+  variables_and_factors_3d_registerTypes();
   solver_registerTypes();
   // linear_solver_registerTypes();
 

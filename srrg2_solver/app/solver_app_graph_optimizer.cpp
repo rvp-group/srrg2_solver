@@ -30,8 +30,8 @@ inline bool checkFile(const std::string& name_) {
 
 // ia register types
 void initTypes() {
-  registerTypes2D();
-  registerTypes3D();
+  variables_and_factors_2d_registerTypes();
+  variables_and_factors_3d_registerTypes();
   solver_registerTypes();
   linear_solver_registerTypes();
 }

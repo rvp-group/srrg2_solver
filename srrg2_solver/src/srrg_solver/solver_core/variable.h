@@ -9,27 +9,26 @@ namespace srrg2_solver {
 
   using namespace srrg2_core;
 
-  //! the motha of all variables
-  //! a variable has
-  //! - an id (-1 when invalid)
-  //! - an estimate (to be assigned in the specialized class
-  //! Variable_<EstimateType>
-  //! - a "fixed" flag, that if true inhibits the variable from being part in
-  //! the optimization
-  //! - a stack of values, implemented through push() and pop(). This is useful
-  //! to perform
-  //!   some temporary operations on a portion of the graph
-  //!
-  //! a variable implements
-  //! - a perturbationDim() method, that returns the dimension of the
-  //! perturbation (chart)
-  //! - a method to apply the perturbation from an array of float
-  //!   (having at minimum dimension perturbationDim
+  /*! @brief Base class of a variable.
+      A variable is characterized by:
+      - a unique graph id (-1 when invalid)
+      - a status (active when partecipate to the optimization, fixed otherwise)
+      - an hessian index which correspond to the block of the approximate hessian that correspond to
+   this variable
+      - a tainted status that tells if the variable TODO
 
+     A variable implements
+     - a perturbationDim() method, that returns the dimension of the
+       perturbation
+     - a method to apply the perturbation from an array of float
+       (having at minimum dimension perturbationDim)
+     - a setZero() method that bring the variable to the origin of its domain
+     - push() and pop() method which manage a stack of estimate values of the variable at different
+   steps
+  */
   class VariableBase : public Identifiable, public DrawableBase {
   public:
     enum Status { Active = 0, NonActive = 1, Fixed = 2 };
-
     using Id = int64_t;
 
   protected:
@@ -38,61 +37,75 @@ namespace srrg2_solver {
     friend struct VariablePtrTuple_;
 
   public:
-    // ! resets the value of the variable to zero/identity....
+    /*! Set the value of the variable to the origin of its domain */
     virtual void setZero() = 0;
 
-    // ! returns the dimension of the pertubation
+    /*! Returns the dimension of the perturbation */
     virtual int perturbationDim() const = 0;
 
-    // ! applies the perturbation to the estimate
+    /*! Applies the perturbation to the variable
+      @param[in] pert_data perturbation vector represented as a C-style array, the dimension must be
+      at least perturbationDim
+     */
     virtual void applyPerturbationRaw(const float* pert_data) = 0;
 
-    // ! returns the id
+    /*! Returns the graph id */
     inline Id graphId() const {
       return _graph_id;
     }
 
-    //! sets the id
+    /*! Sets the id */
     inline void setGraphId(Id graph_id_) {
       _graph_id = graph_id_;
     }
 
-    //! queries the status
+    /*! Queries the status */
     inline Status status() const {
       return _status;
     }
 
-    //! sets the  status
+    /*! Sets the status */
     inline void setStatus(Status status_) {
       _status = status_;
     }
 
-    //! pushes the current estimate to the stack
+    /*! Pushes the current estimate to the stack */
     virtual void push() = 0;
 
-    //! pops the current estimate from the stack
+    /*! Pops the current estimate from the stack */
     virtual void pop() = 0;
 
-    //! keeps the current estimate, but discards the top of the stack
-    //! throws away the most recently saved value
+    /*! Keeps the current estimate, but discards the top of the stack
+     throws away the most recently saved value*/
     virtual void discardTop() = 0;
 
-    //! draws itself on a potential canvas - no need to target anything but the
-    //! core. overridden by different types of variables, to allow drawing
-    //! without any stupid cast
+    /*! Draws itself on a potential canvas - overridden by different types of variables,
+      to allow drawing without any stupid cast */
     void draw(ViewerCanvasPtr canvas_) const override {
       if (!canvas_)
         throw std::runtime_error("Variable::draw|invalid canvas");
       std::cerr << "VariableBase::draw not implemented" << std::endl;
     }
 
-    inline bool tainted() const {return _tainted;}
-    inline void untaint() {_tainted = false;}
+    /*! Get tainted status */
+    inline bool tainted() const {
+      return _tainted;
+    }
+    /*! Untaint variable */
+    inline void untaint() {
+      _tainted = false;
+    }
+
   protected:
-    inline void taint() {_tainted = true;}
+    /*! Set taint, this will be used by Solver once the optimization is over */
+    inline void taint() {
+      _tainted = true;
+    }
+    /*! Serialization id getter (not related to graph id) */
     inline int getId() {
       return Identifiable::getId();
     }
+    /*! Set serialization id */
     inline void setId(int id_) {
       Identifiable::setId(id_);
     }
@@ -100,14 +113,27 @@ namespace srrg2_solver {
     int _hessian_index = -1;
     Status _status     = Active;
     bool _tainted      = true;
+
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   };
 
   using VariableBasePtr = std::shared_ptr<VariableBase>;
 
-  //! @brief intermediate variable required to interact with generic
-  //!        non-Eigen objects. Serialization and Deserialization must be specified
+  /*! @brief Intermediate variable class used for generic
+      non-Eigen estimate types. Serialization and Deserialization must be specified by the user.
+      A VariableGeneric_ is defined using two templates :
+      - PerturbationDim_ specify the dimension of the Euclidian perturbation
+      - EstimateType_ is the internal type of the variable, this must be an partially instatiated
+     template on the scalar type  - e.g. EstimateType_<T> - which is then automatically selected as
+     float DualValuef (used for Autodiff).
+      - The estimate type MUST define a static method called Identity() to inizialize its value
+
+     To define a variable starting from VariableGeneric_ one must override :
+     - setZero()
+     - applyPerturbation(), which takes as argument an Eigen vector, not a C-style array
+     - [optional] serialize() and deserialize() methods
+  */
   template <int PerturbationDim_, template <typename Scalar_> typename EstimateType_>
   class VariableGeneric_ : public VariableBase {
   public:
@@ -117,130 +143,133 @@ namespace srrg2_solver {
     using ADEstimateType                 = EstimateType_<DualValuef>; // ia this sucks
     static constexpr int PerturbationDim = PerturbationDim_;
     using PerturbationVectorType =
-      typename Eigen::Matrix<float, PerturbationDim_, 1>; // ia this sucks
-
-    //! @brief object life (all static stuff)
+      typename Eigen::Matrix<float, PerturbationDim_, 1>; /*!< Euclidian perturbation of the
+                                                             variable */
+    /*! Set the variable to the origin of the domain on construction */
     VariableGeneric_() {
-      // ia nothin to do here
     }
-    virtual ~VariableGeneric_(){
-      // ia nothin to do here
-    };
+    /*! Virtual destructor */
+    virtual ~VariableGeneric_(){};
 
-    //! @brief perturbation dimension
+    /*! Get perturbation dimension */
     int perturbationDim() const override {
       return PerturbationDim;
     }
 
-    //! @brief method of the base class, that calls the typed
-    //!        applyPerturbation of the derived class
+    /*! Method of the base class, that calls the typed
+        applyPerturbation of VariableGeneric_ */
     void applyPerturbationRaw(const float* pert_data_) override {
       Eigen::Map<const PerturbationVectorType> pert(pert_data_);
       applyPerturbation(pert);
     }
 
-    //! @brief sets the estimate to zero, implemented in the specialized case
     virtual void setZero() = 0;
 
-    //! @brief sets estimate
+    /*! Set the estimate value for the variable*/
     virtual void setEstimate(const EstimateType& est_) {
       _estimate = est_;
-      _tainted=true;
+      _tainted  = true;
     }
 
-    //! @brief accessor for the estimate
+    /*! Accessor for the estimate value */
     inline const EstimateType& estimate() const {
       return _estimate;
     }
 
-    //! @brief define this in the derived classes
+    /*! To be defined in the derived classes
+     @param[in] perturbation_ perturbation vector to be applied on the current estimate (Eigen
+     typed)
+     */
     virtual void applyPerturbation(const PerturbationVectorType& perturbation_) = 0;
 
-    //! @brief pushes the variable on the variable stack
-    //!        (like openGL does with attributes and matrices)
+    /*! Pushes the variable on the variable stack
+            (like openGL does with attributes and matrices)
+    */
     void push() override;
 
-    //! @brief pops the variable from the variable stack
-    //!        (like openGL does with attributes and matrices)
+    /*! pops the variable from the variable stack
+    (like openGL does with attributes and matrices) */
     void pop() override;
 
-    //! @brief keeps the current estimate, but discards the top of the stack
-    //!        (throws away the most recently saved value)
+    /*! Keeps the current estimate, but discards the top of the stack
+            (throws away the most recently saved value)
+    */
     void discardTop() override;
 
-    //! @brief serialization of the variable through BOSS.
-    //!        This must be specialized in the derived class
+    /*! Serialization of the variable through BOSS.
+       This must be specialized in the derived class
+    */
     void serialize(ObjectData& odata, IdContext& context) override {
       throw std::runtime_error("VariableGeneric_::serialize|you must implement this function");
     }
 
-    //! @brief deserialization of the variable through BOSS.
-    //!        This must be specialized in the derived class
+    /*! Deserialization of the variable through BOSS.
+        This must be specialized in the derived class
+    */
     void deserialize(ObjectData& odata, IdContext& context) override {
       throw std::runtime_error("VariableGeneric_::deserialize|you must implement this function");
     }
 
   protected:
-    EstimateType _estimate = EstimateType::Identity();
-    std::list<EstimateType, Eigen::aligned_allocator<EstimateType>> _stack;
+    EstimateType _estimate =
+      EstimateType::Identity(); /*!< Estimate value of the variable, initialized as identity*/
+    std::list<EstimateType, Eigen::aligned_allocator<EstimateType>>
+      _stack; /*!< Stack of variable values,
+                push() and pop() interact with it */
   };
 
-  //! @brief specialization of a variable built on an EstimateType_
-  //!        the "numeric" value of EstimateType_ should be a template -
-  //!        e.g. Isometry3_<t> - as it is overridden by autodiff if necessary
-  //!        the estimate is materialized inside as EstimateType_<float>
-  //!        PerturbationDim_: the dimension of the perturbation
-  //!
-  //!        This class implements most of the variable interface, including the stack
-  //!        the only method you need to specialize in a derived class are
-  //!         - applyPerturvation(const PerturbationVectorType& pert_)
-  //!           that takes an eigen vector of float and applies the perturbation to the
-  //!           current estimate
-  //!         - setZero() that resets the esitmate
-  //!        Serialization and deserialization is also implemented
-  //!        ASSUMING THAT ESTIMATE IS AN EIGEN OBJECT. If this is not your favourite whiskey than
-  //!        you should derive from VariableGeneric_.
+  /*! @brief Variable with Eigen-type estimate.
+      Serialization and Deserialization comes for free.
+      A Variable_ is defined using two templates :
+      - PerturbationDim_ specify the dimension of the Euclidian perturbation
+      - EstimateType_ is the internal type of the variable, this must be an partially instatiated
+      template on the scalar type  - e.g. EstimateType_<T> - which is then automatically selected as
+     float and DualValuef (used for Autodiff).
+
+      To define a variable starting from Variable_ one must override :
+      - setZero()
+      - applyPerturbation(), which takes as argument an Eigen vector, not a C-style array
+  */
   template <int PerturbationDim_, template <typename Scalar_> typename EstimateType_>
   class Variable_ : public VariableGeneric_<PerturbationDim_, EstimateType_> {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    using BaseVariableType           = Variable_<PerturbationDim_, EstimateType_>;
-    using EstimateType               = EstimateType_<float>;
-    using ADEstimateType             = EstimateType_<DualValuef>;
-    static const int PerturbationDim = PerturbationDim_;
-    using PerturbationVectorType     = typename Eigen::Matrix<float, PerturbationDim_, 1>;
+    using BaseVariableType = Variable_<PerturbationDim_, EstimateType_>;
+    using EstimateType     = EstimateType_<float>;
 
-    //! @brief object life, everything is static
+    using ADEstimateType = EstimateType_<DualValuef>;
+
+    static const int PerturbationDim = PerturbationDim_;
+    using PerturbationVectorType =
+      typename Eigen::Matrix<float, PerturbationDim_, 1>; /*!< Eigen perturbation vector */
+
+    //! @brief object life, do nothing
     Variable_() {
-      // ia nothin to do
     }
 
     virtual ~Variable_() {
-      // ia nothin to do
     }
 
+    /*! Must be overrided in the derived class */
     void setZero() override {
-      // ia this must be specified in the derived class
     }
 
-    // define this in the derived classes
+    /*! Must be overrided in the derived class */
     void applyPerturbation(const PerturbationVectorType& perturbation) override {
-      // ia this must be specified in the derived class
     }
 
-    //! @brief serialization assuming eigen estimate - implemented in the _impl.cpp
-    //!        this CANNOT be overridden to avoid strange behaviours
+    /*!Serialization assuming eigen estimate - implemented in the _impl.cpp
+      this CANNOT be overridden to avoid strange behaviours */
     void serialize(ObjectData& odata, IdContext& context) final;
 
-    //! @brief deserialization assuming eigen estimate - implemented in the _impl.cpp
-    //!        this CANNOT be overridden to avoid strange behaviours
+    /*! Deserialization assuming eigen estimate - implemented in the _impl.cpp
+      this CANNOT be overridden to avoid strange behaviours */
     void deserialize(ObjectData& odata, IdContext& context) final;
   };
 
+  /*! Associative container, the key is the graph id while the value is pointer to the corresponding
+   * variable */
   using IdVariablePtrContainer = AbstractMapView_<VariableBase::Id, VariableBase const*>;
   using IdVariablePair         = std::pair<VariableBase::Id, VariableBase const*>;
-
 } // namespace srrg2_solver
-
-//#include "variable.hpp"

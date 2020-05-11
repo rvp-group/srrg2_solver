@@ -29,7 +29,7 @@ const size_t n_planes = 10;
 const size_t n_iterations = 50;
 
 int main(int argc, char** argv) {
-  registerTypes3D();
+  variables_and_factors_3d_registerTypes();
   solver_registerTypes();
   // linear_solver_registerTypes();
 
