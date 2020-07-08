@@ -14,14 +14,19 @@ This repository contains several Catkin packages:
 To know more about those packages, refer to the `readme` file in the respective packages.
 
 ## Publications
-To have a more detailed overview on this solver, you can read our brand new [preprint](https://arxiv.org/abs/2002.11051).
+To have a more detailed overview on this solver, you can read our brand new [article](https://doi.org/10.3390/robotics9030051).
 If you use our `srrg2_solver`, please cite us in your work.
 ```bibtex
-@article{grisetti2020least,
-  title={Least Squares Optimization: from Theory to Practice},
+@article{grisetti2020solver,
   author={Grisetti, Giorgio and Guadagnino, Tiziano and Aloise, Irvin and Colosi, Mirco and Della Corte, Bartolomeo and Schlegel, Dominik},
-  journal={arXiv preprint arXiv:2002.11051},
-  year={2020}
+  title={Least Squares Optimization: from Theory to Practice},
+  journal={Robotics},
+  year={2020},
+  month={July},
+  volume={9},
+  number={3},
+  pages={51},
+  doi={10.3390/robotics9030051}
 }
 ```
 
