@@ -1,5 +1,5 @@
 #pragma once
-#include "error_factor.h"
+#include "factor.h"
 
 namespace srrg2_solver {
   using namespace srrg2_core;

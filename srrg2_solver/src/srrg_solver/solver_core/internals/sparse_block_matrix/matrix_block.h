@@ -66,6 +66,10 @@ namespace srrg2_solver {
     //! scale is a matrix of proper dimensions
     void scale(const MatrixBlockBase* scale);
 
+    //! self *= scale
+    //! scale is a scalar
+    void scale(const float& scale);
+
     //! dest = self.transpose
     void transposeTo(MatrixBlockBase* dest) const;
 
@@ -104,6 +108,9 @@ namespace srrg2_solver {
     
     // self *= x (x must be square)
     void rightMatMulInPlace(const MatrixBlockBase* x);
+
+    // out = self * x
+    void matrixProduct(MatrixBlockBase* out, const MatrixBlockBase* x);
 
     // zeroes all values
     void setZero();

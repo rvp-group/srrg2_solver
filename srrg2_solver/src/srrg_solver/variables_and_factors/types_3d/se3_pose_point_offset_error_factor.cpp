@@ -42,7 +42,7 @@ namespace srrg2_solver {
     J_offset.block<3, 3>(0, 3) = 2.0f * geometry3d::skew(predicted_point);
   }
 
-  void SE3PosePointOffsetErrorFactor::draw(ViewerCanvasPtr canvas_) const {
+  void SE3PosePointOffsetErrorFactor::_drawImpl(ViewerCanvasPtr canvas_) const {
     if (!canvas_) {
       throw std::runtime_error("SE3PosePointOffsetErrorFactor::draw|invalid canvas");
     }

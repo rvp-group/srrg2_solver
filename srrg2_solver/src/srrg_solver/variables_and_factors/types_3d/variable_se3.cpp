@@ -10,7 +10,7 @@ namespace srrg2_solver {
     setEstimate(Isometry3f::Identity());
   }
 
-  void VariableSE3Base::draw(ViewerCanvasPtr canvas_) const  {
+  void VariableSE3Base::_drawImpl(ViewerCanvasPtr canvas_) const  {
     if (!canvas_)
       throw std::runtime_error("VariableSE3_::draw|invalid canvas");
     canvas_->pushColor();

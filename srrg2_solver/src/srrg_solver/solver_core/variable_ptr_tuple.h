@@ -121,7 +121,7 @@ namespace srrg2_solver {
       }
       IdVariablePtrContainer::iterator it = container.find(_graph_id);
       if (it != container.end()) {
-        VariableBase* v = const_cast<VariableBase*>(it.value());
+        VariableBase * v = it.value();
         if (v && v != variable) {
           v->_tainted = true;
         }
@@ -224,7 +224,7 @@ namespace srrg2_solver {
       }
       IdVariablePtrContainer::iterator it = container.find(_graph_id);
       if (it != container.end()) {
-        VariableBase* v = const_cast<VariableBase*>(it.value());
+        VariableBase* v = it.value();
         if (v && v != variable) {
           v->_tainted = true;
         }

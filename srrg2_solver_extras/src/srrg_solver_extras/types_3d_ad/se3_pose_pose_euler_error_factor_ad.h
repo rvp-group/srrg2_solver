@@ -39,7 +39,7 @@ namespace srrg2_solver_extras {
       convertMatrix(_inverse_measurement, inv_meas);
     }
 
-    void draw(ViewerCanvasPtr canvas_) const override;
+    void _drawImpl(ViewerCanvasPtr canvas_) const override;
 
   protected:
     // here we store the measurement

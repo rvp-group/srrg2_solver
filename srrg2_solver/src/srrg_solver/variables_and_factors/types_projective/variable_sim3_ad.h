@@ -1,6 +1,6 @@
 #pragma once
 #include "srrg_solver/solver_core/ad_variable.h"
-#include "variable_sim3.hpp"
+#include "variable_sim3.h"
 
 namespace srrg2_solver {
   using namespace srrg2_core;

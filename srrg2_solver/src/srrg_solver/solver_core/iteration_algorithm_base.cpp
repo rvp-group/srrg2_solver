@@ -1,5 +1,5 @@
 #include "iteration_algorithm_base.h"
-#include "solver_base.h"
+#include "solver.h"
 
 namespace srrg2_solver {
 
@@ -33,6 +33,30 @@ namespace srrg2_solver {
 
   void IterationAlgorithmBase::getPerturbation(std::vector<float>& dx) const {
     _solver->getPerturbation(dx);
+  }
+
+  void IterationAlgorithmBase::setPerturbation(const std::vector<float>& dx) const {
+    _solver->setPerturbation(dx);
+  }
+
+  float IterationAlgorithmBase::HessianSymmetricProduct(const std::vector<float>& v) const {
+    Solver* solver = static_cast<Solver*>(_solver);
+    if (!solver) {
+      std::cerr << "IterationAlgorithmBase::HessianSymmetricProduct| the associated solver "
+                   "is not of class Solver"
+                << std::endl;
+      return 0.f;
+    }
+    SparseBlockMatrix vec(solver->_b.blockRowDims(), solver->_b.blockColDims());
+    int idx = 0;
+    for (int rb = 0; rb < vec.blockRows(); ++rb) {
+      MatrixBlockBase* row_block = vec.blockAt(rb, 0, true);
+      int block_dim              = vec.blockDims(rb, 0).first;
+      for (int r = 0; r < block_dim; ++r, ++idx) {
+        row_block->at(r, 0) = v.at(idx);
+      }
+    }
+    return solver->_H.symmetricProduct(vec);
   }
 
   void IterationAlgorithmBase::push() {

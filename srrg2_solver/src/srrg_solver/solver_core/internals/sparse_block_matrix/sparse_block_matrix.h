@@ -140,6 +140,12 @@ namespace srrg2_solver {
     /*! @return Coefficients along the diagonal */
     void getDiagonal(std::vector<float>& diagonal) const;
 
+    /*! Compute product x^T * A * x, where A is this sparse block matrix.
+     *  A must be symmetric
+     *  @param[in] x sparse block matrix that represent the input vector
+     *  @return the product x^T * A * x
+     */
+    float symmetricProduct(const SparseBlockMatrix& x) const;
     /*! Sets the coefficients along the diagonal
       @param[in] diagonal
     */

@@ -103,12 +103,14 @@ namespace srrg2_solver {
     /*! Solve the optimization problem */
     virtual void compute();
 
+
+    // shell interface
+    bool cmdCompute(std::string& response);
+    bool cmdStats(std::string& response);
   protected:
     /*! Perform all the operation required to operate on a new level in the hierarchical
      * optimization */
-    virtual void prepareForNewLevel() {
-      allocateStructures();
-    }
+    virtual void prepareForNewLevel();
 
     void bindConfigProperties();
 
@@ -149,6 +151,11 @@ namespace srrg2_solver {
       @param[out] dx solution of the linear system
     */
     virtual void getPerturbation(std::vector<float>& dx) const = 0;
+
+    /*! Setter for the perturbation vector, used by gradient base algorithms
+     * @param[in] dx perturbation vector
+     * */
+    virtual void setPerturbation(const std::vector<float>& dx) const = 0;
 
     /*! Pushes the current estimates values in the stack*/
     virtual void push() = 0;

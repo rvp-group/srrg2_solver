@@ -22,6 +22,7 @@ namespace srrg2_solver {
     BOSS_REGISTER_CLASS(VariableSim3EulerLeftAD);
     BOSS_REGISTER_CLASS(Sim3PosePoseErrorFactorAD);
     BOSS_REGISTER_CLASS(Sim3Point2PointErrorFactor);
+    BOSS_REGISTER_CLASS(SE3PosePointOmniBAErrorFactor);
   }
 
 } // namespace srrg2_solver

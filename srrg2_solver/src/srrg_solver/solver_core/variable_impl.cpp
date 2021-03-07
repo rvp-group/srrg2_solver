@@ -1,3 +1,6 @@
+#include <cassert>
+
+#include "srrg_boss/object_data.h"
 #include "variable.h"
 
 namespace srrg2_solver {
@@ -6,21 +9,21 @@ namespace srrg2_solver {
 
   template <int PerturbationDim_, template <typename Scalar_> typename EstimateType_>
   void VariableGeneric_<PerturbationDim_, EstimateType_>::push() {
-    _tainted=true;
+    _tainted = true;
     _stack.push_front(_estimate);
   }
 
   template <int PerturbationDim_, template <typename Scalar_> typename EstimateType_>
   void VariableGeneric_<PerturbationDim_, EstimateType_>::pop() {
-    assert(!_stack.empty());
-    _tainted=true;
+    assert(!_stack.empty() && "VariableGeneric_::pop|ERROR, invalid stack");
+    _tainted  = true;
     _estimate = _stack.front();
     _stack.pop_front();
   }
 
   template <int PerturbationDim_, template <typename Scalar_> typename EstimateType_>
   void VariableGeneric_<PerturbationDim_, EstimateType_>::discardTop() {
-    assert(!_stack.empty());
+    assert(!_stack.empty() && "VariableGeneric_::discardTop|ERROR, invalid stack");
     _stack.pop_front();
   }
 
@@ -30,15 +33,24 @@ namespace srrg2_solver {
     Identifiable::serialize(odata, context);
     odata.setInt("graph_id", this->graphId());
     odata.setInt("status", this->status());
-    const int e_rows = this->_estimate.matrix().rows();
-    const int e_cols = this->_estimate.matrix().cols();
-    ArrayData* adata = new ArrayData;
-    for (int r = 0; r < e_rows; ++r) {
-      for (int c = 0; c < e_cols; ++c) {
-        adata->add(this->_estimate.matrix()(r, c));
-      }
-    }
-    odata.setField("estimate", adata);
+
+    // ia -std=c++Giorgio
+    //    using EstimateType = typeof(this->estimate());
+    //    odata.setEigen<EstimateType>("estimate", this->_estimate);
+
+    // ia -std=c++14
+    odata.setEigen<decltype(this->_estimate)>("estimate", this->_estimate);
+
+    // ia old serialization of eigen data
+    //  const int e_rows = this->_estimate.matrix().rows();
+    //  const int e_cols = this->_estimate.matrix().cols();
+    //  ArrayData* adata = new ArrayData;
+    //  for (int r = 0; r < e_rows; ++r) {
+    //    for (int c = 0; c < e_cols; ++c) {
+    //      adata->add(this->_estimate.matrix()(r, c));
+    //    }
+    //  }
+    //  odata.setField("estimate", adata);
   }
 
   template <int PerturbationDim_, template <typename Scalar_> typename EstimateType_>
@@ -59,19 +71,31 @@ namespace srrg2_solver {
         st = VariableBase::Status::Fixed;
         break;
       default:
-        throw std::runtime_error("Invalid status value in file");
+        throw std::runtime_error("Variable_::deserialize|ERROR, invalid status value in file");
     }
     this->setStatus(st);
-    ArrayData* adata = dynamic_cast<ArrayData*>(odata.getField("estimate"));
-    int k            = 0;
-    const int e_rows = this->_estimate.matrix().rows();
-    const int e_cols = this->_estimate.matrix().cols();
-    for (int r = 0; r < e_rows; ++r) {
-      for (int c = 0; c < e_cols; ++c, ++k) {
-        this->_estimate.matrix()(r, c) = (*adata)[k].getFloat();
-      }
-    }
-    this->setEstimate(this->_estimate);
+
+    // ia -std=c++Giorgio
+    //    using EstimateType = typeof(this->_estimate);
+    //    EstimateType est;
+    //    est = odata.getEigen<EstimateType>("estimate");
+
+    // ia -std=c++14
+    auto est = odata.getEigen<decltype(this->_estimate)>("estimate");
+
+    this->setEstimate(est);
+
+    // ia old serialization of eigen data
+    //    ArrayData* adata = dynamic_cast<ArrayData*>(odata.getField("estimate"));
+    //    int k            = 0;
+    //    const int e_rows = this->_estimate.matrix().rows();
+    //    const int e_cols = this->_estimate.matrix().cols();
+    //    for (int r = 0; r < e_rows; ++r) {
+    //      for (int c = 0; c < e_cols; ++c, ++k) {
+    //        this->_estimate.matrix()(r, c) = (*adata)[k].getFloat();
+    //      }
+    //    }
+    //    this->setEstimate(this->_estimate);
   }
 
 } // namespace srrg2_solver

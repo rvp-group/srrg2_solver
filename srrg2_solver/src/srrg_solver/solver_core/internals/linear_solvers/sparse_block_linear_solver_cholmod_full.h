@@ -43,13 +43,13 @@ namespace srrg2_solver {
 
     // tg i use NULL to make it consistent with the output of cholmod_free_stuff
     // @brief system matrix in cholmod sparse format
-    cholmod_sparse* _B = NULL;
+    cholmod_sparse* _B = nullptr;
     // @brief target vector in cholmod dense format
-    cholmod_dense* _c = NULL;
+    cholmod_dense* _c = nullptr;
     // @brief solution vector in cholmod dense format
-    cholmod_dense* _solution = NULL;
+    cholmod_dense* _solution = nullptr;
     // @brief Cholesky factor in cholmod format
-    cholmod_factor* _L = NULL;
+    cholmod_factor* _L = nullptr;
 
     // tg data structure for marginal covariance computation
     // @brief cache matrix elements and inverse diagonal (elimination tree)

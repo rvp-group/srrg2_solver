@@ -125,7 +125,7 @@ void generateConfig(const std::string& config_file, const std::string& config_na
   solver->param_max_iterations.value().push_back(100);
 
   // we set a simplistic termination criteria
-  auto term_crit = manager.create<PerturbationNormTerminationCriteria>();
+  auto term_crit = manager.create<RelativeGradientChiTerminationCriteria>();
   solver->param_termination_criteria.setValue(term_crit);
 
   // we install a policy that matches each SE3PosePoseGeodesicQuaternionErrorFactor
@@ -167,11 +167,11 @@ void doOptimization(FactorGraphPtr factor_graph_,
   while (srrg2_qgl_viewport::ViewerCoreSharedQGL::isRunning()) {
     // ia draw something on the canvas
     for (const auto& v_tuple : factor_graph_->variables()) {
-      v_tuple.second->draw(canvas_);
+      v_tuple.second->_drawImpl(canvas_);
     }
 
     for (const auto& f : factor_graph_->factors()) {
-      f.second->draw(canvas_);
+      f.second->_drawImpl(canvas_);
     }
 
     canvas_->flush();

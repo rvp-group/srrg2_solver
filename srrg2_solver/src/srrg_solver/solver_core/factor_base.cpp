@@ -18,7 +18,7 @@ namespace srrg2_solver {
     return true;
   }
 
-  void FactorBase::draw(ViewerCanvasPtr canvas_) const {
+  void FactorBase::_drawImpl(ViewerCanvasPtr canvas_) const {
     if (!canvas_)
       throw std::runtime_error("FactorBase::draw|invalid canvas");
     std::cerr << "FactorBase::draw not implemented" << std::endl;

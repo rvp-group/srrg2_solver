@@ -23,7 +23,7 @@ namespace srrg2_solver {
     }
 
     void errorAndJacobian(bool error_only_ = false) final;
-    void draw(srrg2_core::ViewerCanvasPtr canvas) const final;
+    void _drawImpl(srrg2_core::ViewerCanvasPtr canvas) const override;
 
   protected:
     MeasurementType _inverse_measured_relative_pose; /**< Cache the inverse measurement */

@@ -91,11 +91,11 @@ void doOptimization(FactorGraphPtr graph_, size_t iterations_, ViewerCanvasPtr c
 
   while (ViewerCoreSharedQGL::isRunning()) {
     for (auto v : graph_->variables()) {
-      v.second->draw(canvas_);
+      v.second->_drawImpl(canvas_);
     }
 
     for (auto f : graph_->factors()) {
-      f.second->draw(canvas_);
+      f.second->_drawImpl(canvas_);
     }
     canvas_->flush();
 

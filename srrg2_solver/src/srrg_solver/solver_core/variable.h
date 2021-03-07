@@ -81,7 +81,7 @@ namespace srrg2_solver {
 
     /*! Draws itself on a potential canvas - overridden by different types of variables,
       to allow drawing without any stupid cast */
-    void draw(ViewerCanvasPtr canvas_) const override {
+    void _drawImpl(ViewerCanvasPtr canvas_) const override {
       if (!canvas_)
         throw std::runtime_error("Variable::draw|invalid canvas");
       std::cerr << "VariableBase::draw not implemented" << std::endl;
@@ -169,6 +169,7 @@ namespace srrg2_solver {
     virtual void setEstimate(const EstimateType& est_) {
       _estimate = est_;
       _tainted  = true;
+      this->_need_redraw = true;
     }
 
     /*! Accessor for the estimate value */
@@ -261,15 +262,15 @@ namespace srrg2_solver {
 
     /*!Serialization assuming eigen estimate - implemented in the _impl.cpp
       this CANNOT be overridden to avoid strange behaviours */
-    void serialize(ObjectData& odata, IdContext& context) final;
+    void serialize(ObjectData& odata, IdContext& context);
 
     /*! Deserialization assuming eigen estimate - implemented in the _impl.cpp
       this CANNOT be overridden to avoid strange behaviours */
-    void deserialize(ObjectData& odata, IdContext& context) final;
+    void deserialize(ObjectData& odata, IdContext& context);
   };
 
   /*! Associative container, the key is the graph id while the value is pointer to the corresponding
    * variable */
-  using IdVariablePtrContainer = AbstractMapView_<VariableBase::Id, VariableBase const*>;
-  using IdVariablePair         = std::pair<VariableBase::Id, VariableBase const*>;
+  using IdVariablePtrContainer = AbstractMapView_<VariableBase::Id, VariableBase *>;
+  using IdVariablePair         = std::pair<VariableBase::Id, VariableBase *>;
 } // namespace srrg2_solver

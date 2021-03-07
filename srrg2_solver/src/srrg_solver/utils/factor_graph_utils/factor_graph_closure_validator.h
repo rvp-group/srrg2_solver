@@ -47,13 +47,13 @@ namespace srrg2_solver {
     // add constants, these are variables that represent fixed parameters
     // and are not "touched" by the internal adjustments done while optimizing
     // the system
-    void addConstant(const VariableBase* constant);
+    void addConstant(VariableBase* constant);
 
     // does one round of updates, assuming the "central" partition
     // is the one you pass as argumen. The argument is intended to represent
     // the current node where the robot is
     // call this after having inserted all closures of the current epoch
-    void compute(const VariableBase* variable);
+    void compute(VariableBase* variable);
 
     inline int partitionsNum() const {
       return partitions.size();
@@ -66,7 +66,7 @@ namespace srrg2_solver {
       Status status          = Pending;
     };
     using ClosureStatsMap    = std::map<FactorBase*, ClosureStats>;
-    using ClosureStatsPtrMap = std::map<FactorBasePtr, const ClosureStats*>;
+    using ClosureStatsPtrMap = std::map<FactorBasePtr, ClosureStats*>;
 
     // here you get the result of the closures, for each open one
     // the graph is not messed up
@@ -80,33 +80,33 @@ namespace srrg2_solver {
 
   protected:
     std::map<FactorBase*, FactorBasePtr> _ptr_sptr_map;
-    std::set<const VariableBase*> _constants;
+    std::set<VariableBase*> _constants;
     ClosureStatsMap _closures;
     ClosureStatsPtrMap _updated_closures;
     FactorGraphInterfacePtr _graph = 0;
     using FactorGraphViewPtr       = std::unique_ptr<FactorGraphView>;
     std::map<FactorGraphView*, FactorGraphViewPtr> partitions;
-    std::map<const VariableBase*, FactorGraphView*> var_to_partition_map;
-    std::set<const VariableBase*> open_variables;
+    std::map<VariableBase*, FactorGraphView*> var_to_partition_map;
+    std::set<VariableBase*> open_variables;
 
-    bool isConstant(const VariableBase* var) const;
-    void preparePartitioning(const VariableBase* active_variable);
+    bool isConstant(VariableBase* var) const;
+    void preparePartitioning(VariableBase* active_variable);
 
     // returns the set where the addition occurred
     // in case of joining
     FactorGraphView* addVariable(FactorGraphView* partition,
-                                 const VariableBase* variable);
+                                 VariableBase* variable);
 
-    FactorGraphView* partition(const VariableBase* variable);
+    FactorGraphView* partition(VariableBase* variable);
 
-    void expandPartition(const VariableBase* variable);
+    void expandPartition(VariableBase* variable);
 
     void joinPartitions(FactorGraphView* dest, FactorGraphView* src);
 
-    float computeTraversalCost(const VariableBase* v1_,
-                               const VariableBase* v2_);
+    float computeTraversalCost(VariableBase* v1_,
+                               VariableBase* v2_);
     void computePartitions();
-    void clusterClosures(const VariableBase* variable);
+    void clusterClosures(VariableBase* variable);
     void doValidate1(FactorGraphView* active_partition,
                      std::list<FactorBase*>& factors);
     void doValidate2(FactorGraphView* active_partition,

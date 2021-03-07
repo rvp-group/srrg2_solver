@@ -5,16 +5,20 @@
 
 namespace srrg2_solver {
 
-  void Sim3PosePoseErrorFactorAD::draw(ViewerCanvasPtr canvas_) const {
+  void Sim3PosePoseErrorFactorAD::_drawImpl(ViewerCanvasPtr canvas_) const {
     if (!canvas_)
       throw std::runtime_error("Sim3PosePoseErrorFactorAD::draw|invalid canvas");
     Vector3f factor_line[2];
-    const Similiarity3f& pose_from =
-      dynamic_cast<const VariableSim3EulerLeftAD*>(variable(0))->estimate();
-    const Similiarity3f& pose_to =
-      dynamic_cast<const VariableSim3EulerLeftAD*>(variable(1))->estimate();
-    factor_line[0] = pose_from.translation();
-    factor_line[1] = pose_to.translation();
+    const VariableSim3QuaternionRight* v_from=dynamic_cast<const VariableSim3QuaternionRight*>(variable(0));
+    const VariableSim3QuaternionRight* v_to=dynamic_cast<const VariableSim3QuaternionRight*>(variable(1));
+    if (! v_from || ! v_to) {
+      return;
+    }
+    const Similiarity3f& pose_from = v_from->estimate();
+    const Similiarity3f& pose_to =   v_to->estimate();
+
+    factor_line[0] = pose_from.translation()/pose_from.inverseScaling();
+    factor_line[1] = pose_to.translation()/pose_from.inverseScaling();
 
     canvas_->pushColor();
     canvas_->setColor(srrg2_core::ColorPalette::color3fOrange());

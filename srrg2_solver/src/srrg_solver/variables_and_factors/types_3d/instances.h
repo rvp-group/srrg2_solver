@@ -17,9 +17,8 @@
 #include "se3_pose_point_error_factor.h"
 #include "se3_pose_point_offset_error_factor.h"
 #include "se3_pose_pose_chordal_error_factor.h"
+#include "se3_pose_pose_chordal_hessian_factor.h"
 #include "se3_pose_pose_geodesic_error_factor.h"
-
-#include "se3_pose_pose_offset_error_factor_ad.h"
 
 namespace srrg2_solver {
   void variables_and_factors_3d_registerTypes() __attribute__((constructor));

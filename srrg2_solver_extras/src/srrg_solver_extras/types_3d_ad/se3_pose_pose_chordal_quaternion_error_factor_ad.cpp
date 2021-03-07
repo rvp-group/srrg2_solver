@@ -5,7 +5,7 @@
 
 namespace srrg2_solver_extras {
 
-  void SE3PosePoseChordalQuaternionErrorFactorAD::draw(ViewerCanvasPtr canvas_) const {
+  void SE3PosePoseChordalQuaternionErrorFactorAD::_drawImpl(ViewerCanvasPtr canvas_) const {
     if (!canvas_)
       throw std::runtime_error("SE3PosePoseChordalQuaternionErrorFactorAD::draw|invalid canvas");
     Vector3f factor_line[2];

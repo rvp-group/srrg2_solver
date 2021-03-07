@@ -35,8 +35,8 @@ namespace srrg2_solver {
       Similiarity3f inv_meas = iso.inverse();
       convertMatrix(_inverse_measurement, inv_meas);
     }
-
-    void draw(ViewerCanvasPtr canvas_) const override;
+    
+    void _drawImpl(ViewerCanvasPtr canvas_) const override;
 
   protected:
     //! @brief measurement

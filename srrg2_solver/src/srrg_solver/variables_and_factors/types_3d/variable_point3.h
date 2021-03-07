@@ -18,7 +18,7 @@ namespace srrg2_solver {
 
     virtual void applyPerturbation(const Vector3f& pert) override;
 
-    void draw(ViewerCanvasPtr canvas_) const override;
+    void _drawImpl(ViewerCanvasPtr canvas_) const override;
   };
 
 } // namespace srrg2_solver

@@ -18,6 +18,7 @@ namespace srrg2_solver {
   /*! @brief Non linear solver acting on factor graphs */
   class Solver : public SolverBase {
   public:
+    friend class IterationAlgorithmBase;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     PARAM(PropertyConfigurable_<SparseBlockLinearSolver>,
@@ -38,6 +39,13 @@ namespace srrg2_solver {
           0);
 
     Solver();
+
+    bool cmdLoadGraph(std::string& response, const std::string& filename);
+    bool cmdSaveGraph(std::string& response, const std::string& filename);
+    
+    bool loadGraph(const std::string& filename);
+    bool saveGraph(const std::string& filename);
+    
     /*! @return The factor graph interface shared pointer */
     FactorGraphInterfacePtr graph() {
       return _graph;
@@ -63,6 +71,8 @@ namespace srrg2_solver {
     inline float chi2() const {
       return lastIterationStats().chi_normalized;
     }
+
+    float normalizedChi2();
 
     void allocateStructures() override;
 
@@ -103,6 +113,7 @@ namespace srrg2_solver {
     void getDiagonal(std::vector<float>& diagonal) const override;
     void setDiagonal(const std::vector<float>& diagonal) override;
     void getRHS(std::vector<float>& b) const override;
+    void setPerturbation(const std::vector<float>& dx) const override;
     void getPerturbation(std::vector<float>& dx) const override;
     void push() override;
     void pop() override;

@@ -59,13 +59,13 @@ namespace srrg2_solver {
       return SparseBlockLinearSolver::StructureBad;
     }
     // tg free the relevant cholmod matricies
-    if (_B != NULL) {
+    if (_B != nullptr) {
       cholmod_free_sparse(&_B, &_cholmodCommon);
     }
-    if (_c != NULL) {
+    if (_c != nullptr) {
       cholmod_free_dense(&_c, &_cholmodCommon);
     }
-    if (_L != NULL) {
+    if (_L != nullptr) {
       cholmod_free_factor(&_L, &_cholmodCommon);
     }
     // tg allocate cholmod dense for target vector _c
@@ -81,9 +81,9 @@ namespace srrg2_solver {
     size_t cols = _A->cols();
     size_t nnz  = _A->numNonZeros();
     _B          = cholmod_allocate_sparse(rows, cols, nnz, 1, 1, 1, CHOLMOD_REAL, &_cholmodCommon);
-    _B->p       = new int[rows + 1];
-    _B->i       = new int[_B->nzmax];
-    _B->x       = new double[_B->nzmax];
+    // _B->p       = new int[rows + 1];
+    // _B->i       = new int[_B->nzmax];
+    // _B->x       = new double[_B->nzmax];
     _A->toCCS((int*) _B->i, (int*) _B->p, (double*) _B->x);
     // apply null ordering (block ordering is performed by the Solver at the level of
     // variables through computeOrderingHint, see below)
@@ -114,7 +114,7 @@ namespace srrg2_solver {
 
   SparseBlockLinearSolver::Status SparseBlockLinearSolverCholmodFull::updateSolution() {
     // tg delete previous solution
-    if (_solution != NULL) {
+    if (_solution != nullptr) {
       cholmod_free_dense(&_solution, &_cholmodCommon);
     }
 

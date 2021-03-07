@@ -43,7 +43,7 @@ namespace srrg2_solver_extras {
     const Isometry2f& measurement() const override {
       return _measurement;
     }
-    void draw(srrg2_core::ViewerCanvasPtr canvas) const override;
+    void _drawImpl(srrg2_core::ViewerCanvasPtr canvas) const override;
 
   protected:
     // here we store the measurement

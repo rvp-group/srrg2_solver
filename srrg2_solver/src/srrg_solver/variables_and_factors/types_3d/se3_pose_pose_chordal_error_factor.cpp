@@ -60,7 +60,7 @@ namespace srrg2_solver {
     return;
   }
 
-  void SE3PosePoseChordalEulerLeftErrorFactor::draw(ViewerCanvasPtr canvas_) const {
+  void SE3PosePoseChordalEulerLeftErrorFactor::_drawImpl(ViewerCanvasPtr canvas_) const {
     if (!canvas_) {
       throw std::runtime_error("SE3PosePoseChordalEulerErrorFactor::draw|invalid canvas");
     }

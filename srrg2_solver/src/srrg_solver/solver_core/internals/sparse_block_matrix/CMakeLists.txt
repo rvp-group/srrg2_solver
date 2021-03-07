@@ -1,6 +1,5 @@
 add_library(srrg2_solver_sparse_block_matrix_library SHARED
-  vectorizers.h
-  vectorized_matrix_ops.hpp
+  c_matrix_ops.hpp
 
   matrix_block.h
   matrix_block.cpp

@@ -222,6 +222,59 @@ namespace srrg2_solver {
     return true;
   }
 
+  float SparseBlockMatrix::symmetricProduct(const SparseBlockMatrix& x) const {
+    assert(isLayoutSymmetric() && "SparseBlockMatrix::symmetricProduct| matrix is not symmetric");
+    assert(x.blockRows() == blockCols() &&
+           "SparseBlockMatrix::symmetricProduct| size mismatch between vector and matrix");
+    assert(x.blockCols() == 1 &&
+           "SparseBlockMatrix::symmetricProduct| size mismatch between vector and matrix");
+    // tg extract number of block cols (assumes symmetric layout)
+    int num_block_cols_matrix      = blockCols();
+    // tg initialize result
+    float result                   = 0;
+    // tg factory and result block
+    MatrixBlockFactory* factory    = MatrixBlockFactory::instance();
+    MatrixBlock_<1, 1> sym_product;
+    // tg scale for the off-diagonal blocks
+    float off_scale = 2.f;
+    // tg for each block columns
+    for (int c = 0; c < num_block_cols_matrix; ++c) {
+      // tg take the block column of the matrix
+      const IntBlockMap& col = _cols[c];
+      // tg take the corresponding block of the vector
+      const MatrixBlockBase* root_block = x.blockAt(c, 0);
+      if (!root_block) {
+        continue;
+      }
+      // tg for each element in the matrix column compute x(r)^T * A(r,c) * x(c)
+      // with r that goes from 0 to num_rows-1
+      // the output of this product is one term of the summation that gives us x^T * A * x
+      for (auto it = col.begin(); it != col.end(); ++it) {
+        // tg takes the row index (r) and block in the matrix column
+        const int row_block_index    = it->first;
+        const MatrixBlockBase* matrix_block = it->second.get();
+        // tg take the corresponding block in the vector x (aka x(r))
+        const MatrixBlockBase* vector_block = x.blockAt(row_block_index, 0);
+        // tg transpose the block for the multiplication
+        MatrixBlockBasePtr transpose_block(factory->createBlock(1, vector_block->rows()));
+        vector_block->transposeTo(transpose_block.get());
+        // tg create result of the multiplication (aka x(r)^T * A(r,c)) and compute
+        MatrixBlockBasePtr tmp_block(factory->createBlock(1, matrix_block->cols()));
+        transpose_block->matrixProduct(tmp_block.get(), matrix_block);
+        // tg compute the final product x(r)^T * A(r,c) * x(c)
+        tmp_block->matrixProduct(&sym_product, root_block);
+        // tg handle off-diagonal blocks, in fact we represent a symmetric matrix by its upper
+        // triangular structure
+        if (row_block_index != c) {
+          sym_product.scale(off_scale);
+        }
+        // tg accumulate the result
+        result += sym_product._matrix(0, 0);
+      }
+    }
+    return result;
+  }
+
   //! returns the coefficients along the diagonal
   void SparseBlockMatrix::getDiagonal(std::vector<float>& diagonal) const {
     assert(isLayoutSymmetric() && "layout not symmetric");

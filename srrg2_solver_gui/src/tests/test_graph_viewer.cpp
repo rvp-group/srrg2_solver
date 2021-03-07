@@ -12,6 +12,7 @@
 #include <srrg_solver/utils/factor_graph_utils/instances.h>
 #include <srrg_solver/variables_and_factors/types_2d/instances.h>
 #include <srrg_solver/variables_and_factors/types_3d/instances.h>
+#include <srrg_solver/variables_and_factors/types_projective/instances.h>
 #include <srrg_solver/variables_and_factors/types_calib/instances.h>
 // ia viewer stuff
 #include <srrg_qgl_viewport/viewer_core_shared_qgl.h>
@@ -27,6 +28,7 @@ void initTypes() {
   variables_and_factors_2d_registerTypes();
   variables_and_factors_3d_registerTypes();
   variables_and_factors_calib_registerTypes();
+  variables_and_factors_projective_registerTypes();
   solver_registerTypes();
   linear_solver_registerTypes();
   solver_utils_registerTypes();
@@ -75,11 +77,11 @@ int main(int argc, char** argv) {
 void viewGraph(FactorGraphPtr graph_, ViewerCanvasPtr canvas_) {
   while (ViewerCoreSharedQGL::isRunning()) {
     for (auto v : graph_->variables()) {
-      v.second->draw(canvas_);
+      v.second->_drawImpl(canvas_);
     }
 
     for (auto f : graph_->factors()) {
-      f.second->draw(canvas_);
+      f.second->_drawImpl(canvas_);
     }
 
     canvas_->flush();

@@ -20,11 +20,11 @@ namespace srrg2_solver {
     }
   }
 
-  void FactorGraphClosureValidator::addConstant(const VariableBase* constant) {
+  void FactorGraphClosureValidator::addConstant(VariableBase* constant) {
     _constants.insert(constant);
   }
 
-  bool FactorGraphClosureValidator::isConstant(const VariableBase* constant) const {
+  bool FactorGraphClosureValidator::isConstant(VariableBase* constant) const {
     return _constants.count(constant);
   }
 
@@ -51,13 +51,13 @@ namespace srrg2_solver {
     _updated_closures.clear();
   }
 
-  void FactorGraphClosureValidator::compute(const VariableBase* active_variable) {
+  void FactorGraphClosureValidator::compute(VariableBase* active_variable) {
     // resetClosureStatus();
     preparePartitioning(active_variable);
     computePartitions();
     clusterClosures(active_variable);
     for (auto it = _updated_closures.begin(); it != _updated_closures.end(); ++it) {
-      ClosureStats* stats = const_cast<ClosureStats*>(it->second);
+      ClosureStats* stats = it->second;
       ++stats->num_rounds_checked;
       if (stats->status != ClosureStats::Pending) {
         continue;
@@ -78,7 +78,7 @@ namespace srrg2_solver {
     }
   }
 
-  void FactorGraphClosureValidator::preparePartitioning(const VariableBase* active_variable) {
+  void FactorGraphClosureValidator::preparePartitioning(VariableBase* active_variable) {
     partitions.clear();
     var_to_partition_map.clear();
     open_variables.clear();
@@ -108,7 +108,7 @@ namespace srrg2_solver {
   void FactorGraphClosureValidator::joinPartitions(FactorGraphView* dest, FactorGraphView* src) {
     // console_stream << "Joining" << dest << " " << src << endl;
     for (auto it = src->variables().begin(); it != src->variables().end(); ++it) {
-      VariableBase* variable = const_cast<VariableBase*>(it.value());
+      VariableBase* variable = it.value();
       dest->_variables.insert(std::make_pair(variable->graphId(), variable));
       if (!isConstant(it.value())) {
         var_to_partition_map[variable] = dest;
@@ -117,7 +117,7 @@ namespace srrg2_solver {
   }
 
   FactorGraphView* FactorGraphClosureValidator::addVariable(FactorGraphView* partition_,
-                                                            const VariableBase* variable) {
+                                                            VariableBase* variable) {
     FactorGraphView* other_partition = partition(variable);
     if (other_partition == partition_) {
       return partition_;
@@ -136,7 +136,7 @@ namespace srrg2_solver {
     return p_it->first;
   }
 
-  FactorGraphView* FactorGraphClosureValidator::partition(const VariableBase* variable) {
+  FactorGraphView* FactorGraphClosureValidator::partition(VariableBase* variable) {
     auto it = var_to_partition_map.find(variable);
     if (it == var_to_partition_map.end()) {
       return nullptr;
@@ -154,12 +154,11 @@ namespace srrg2_solver {
     }
   };
 
-  void FactorGraphClosureValidator::expandPartition(const VariableBase* active_variable_) {
-    VariableBase* active_variable  = const_cast<VariableBase*>(active_variable_);
+  void FactorGraphClosureValidator::expandPartition(VariableBase* active_variable) {
     FactorGraphView* new_partition = new FactorGraphView;
     partitions.insert(std::make_pair(new_partition, FactorGraphViewPtr(new_partition)));
 
-    console_stream << __PRETTY_FUNCTION__ << ": " << active_variable_->graphId() << endl;
+    console_stream << __PRETTY_FUNCTION__ << ": " << active_variable->graphId() << endl;
     std::map<VariableBase*, float> costs;
     std::deque<QEntry> queue;
     costs.insert(std::make_pair(active_variable, 0.f));
@@ -217,12 +216,12 @@ namespace srrg2_solver {
     }
   }
 
-  float FactorGraphClosureValidator::computeTraversalCost(const VariableBase* v1_,
-                                                          const VariableBase* v2_) {
+  float FactorGraphClosureValidator::computeTraversalCost(VariableBase* v1_,
+                                                          VariableBase* v2_) {
     //  SE2
     {
-      const VariableSE2Base* v1 = dynamic_cast<const VariableSE2Base*>(v1_);
-      const VariableSE2Base* v2 = dynamic_cast<const VariableSE2Base*>(v2_);
+      VariableSE2Base* v1 = dynamic_cast<VariableSE2Base*>(v1_);
+      VariableSE2Base* v2 = dynamic_cast<VariableSE2Base*>(v2_);
       if (v1 && v2) {
         return (v1->estimate().translation() - v2->estimate().translation()).norm();
       }
@@ -230,8 +229,8 @@ namespace srrg2_solver {
 
     // SE3
     {
-      const VariableSE3Base* v1 = dynamic_cast<const VariableSE3Base*>(v1_);
-      const VariableSE3Base* v2 = dynamic_cast<const VariableSE3Base*>(v2_);
+      VariableSE3Base* v1 = dynamic_cast<VariableSE3Base*>(v1_);
+      VariableSE3Base* v2 = dynamic_cast<VariableSE3Base*>(v2_);
       if (v1 && v2) {
         return (v1->estimate().translation() - v2->estimate().translation()).norm();
       }
@@ -241,7 +240,7 @@ namespace srrg2_solver {
 
   void FactorGraphClosureValidator::computePartitions() {
     while (!open_variables.empty()) {
-      const VariableBase* root_v = *open_variables.begin();
+      VariableBase* root_v = *open_variables.begin();
       open_variables.erase(open_variables.begin());
       expandPartition(root_v);
     }
@@ -270,7 +269,7 @@ namespace srrg2_solver {
 
   using PMapKeyClosureMap = std::map<PMapKey, std::list<FactorBase*>, PMapKeyCompare>;
 
-  void FactorGraphClosureValidator::clusterClosures(const VariableBase* active_variable) {
+  void FactorGraphClosureValidator::clusterClosures(VariableBase* active_variable) {
     _updated_closures.clear();
     FactorGraphView* active_partition = partition(active_variable);
     if (!active_partition) {
@@ -344,7 +343,7 @@ namespace srrg2_solver {
 
   void FactorGraphClosureValidator::pushAll(FactorGraphView* graph) {
     for (auto it = graph->variables().begin(); it != graph->variables().end(); ++it) {
-      VariableBase* v = const_cast<VariableBase*>(it.value());
+      VariableBase* v = it.value();
       if (!isConstant(v)) {
         v->push();
       }
@@ -353,7 +352,7 @@ namespace srrg2_solver {
 
   void FactorGraphClosureValidator::popAll(FactorGraphView* graph) {
     for (auto it = graph->variables().begin(); it != graph->variables().end(); ++it) {
-      VariableBase* v = const_cast<VariableBase*>(it.value());
+      VariableBase* v = it.value();
       if (!isConstant(v)) {
         v->pop();
       }
@@ -402,7 +401,7 @@ namespace srrg2_solver {
     }
     total_t = target_pose * other_var->estimate().inverse();
     for (auto it = partition->variables().begin(); it != partition->variables().end(); ++it) {
-      VariableBase* v = const_cast<VariableBase*>(it.value());
+      VariableBase* v = it.value();
       if (isConstant(v)) {
         continue;
       }
@@ -437,7 +436,7 @@ namespace srrg2_solver {
     }
     total_t = target_pose * other_var->estimate().inverse();
     for (auto it = partition->variables().begin(); it != partition->variables().end(); ++it) {
-      VariableBase* v = const_cast<VariableBase*>(it.value());
+      VariableBase* v = it.value();
       if (isConstant(v)) {
         continue;
       }

@@ -1,7 +1,7 @@
 #pragma once
 #include "srrg_solver/solver_core/error_factor.h"
 #include "srrg_solver/solver_core/factor_correspondence_driven_dynamic.h"
-#include "variable_sim3.hpp"
+#include "variable_sim3.h"
 #include <srrg_pcl/point_types.h>
 
 namespace srrg2_solver {

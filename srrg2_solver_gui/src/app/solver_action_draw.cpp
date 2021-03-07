@@ -13,11 +13,11 @@ namespace srrg2_solver_gui {
 
     // ia write variables on the canvas
     for (const auto& v_tuple : _graph->variables()) {
-      v_tuple.second->draw(_canvas);
+      v_tuple.second->_drawImpl(_canvas);
     }
 
     for (const auto& f : _graph->factors()) {
-      f.second->draw(_canvas);
+      f.second->_drawImpl(_canvas);
     }
 
     _canvas->flush();

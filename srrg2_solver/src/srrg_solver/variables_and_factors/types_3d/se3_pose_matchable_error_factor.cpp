@@ -135,7 +135,7 @@ namespace srrg2_solver {
     }
   }
 
-  void SE3PoseMatchableEulerLeftErrorFactor::draw(ViewerCanvasPtr canvas_) const {
+  void SE3PoseMatchableEulerLeftErrorFactor::_drawImpl(ViewerCanvasPtr canvas_) const {
     if (!canvas_) {
       throw std::runtime_error("SE3PoseMatchableErrorFactor::draw|invalid canvas");
     }

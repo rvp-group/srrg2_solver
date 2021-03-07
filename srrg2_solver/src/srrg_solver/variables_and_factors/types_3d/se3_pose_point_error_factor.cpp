@@ -21,5 +21,20 @@ namespace srrg2_solver {
     // tg jacobian with respect to point
     _J.block<3, 3>(0, 6) = X.linear().transpose();
   }
+
+  void SE3PosePointErrorFactor::_drawImpl(ViewerCanvasPtr canvas_) const {
+    if (!canvas_) {
+      throw std::runtime_error("SE3PosePointErrorFactor::draw|invalid canvas");
+    }
+    Vector3f coords[2];
+    coords[0] =
+      static_cast<const VariableSE3QuaternionRight*>(variable(0))->estimate().translation();
+    coords[1] = static_cast<const VariablePoint3*>(variable(1))->estimate();
+    canvas_->pushColor();
+    canvas_->setColor(srrg2_core::ColorPalette::color3fGreen());
+    canvas_->putLine(2, coords);
+    canvas_->popAttribute();
+  }
+
   INSTANTIATE(SE3PosePointErrorFactor)
 } // namespace srrg2_solver

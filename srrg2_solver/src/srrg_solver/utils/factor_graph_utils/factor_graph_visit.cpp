@@ -26,7 +26,7 @@ namespace srrg2_solver {
     _entries.clear();
     IdVariablePtrContainer& variables = _graph->variables();
     for (IdVariablePtrContainer::iterator it = variables.begin(); it != variables.end(); ++it) {
-      VariableBase* v = const_cast<VariableBase*>(it.value());
+      VariableBase* v = it.value();
       _entries.add(new VariableVisitEntry(v));
     }
     _queue = FactorGraphVisitEntryQueue();

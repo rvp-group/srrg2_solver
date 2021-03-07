@@ -35,6 +35,10 @@ namespace srrg2_solver {
     /*! See SolverBase */
     void getPerturbation(std::vector<float>& dx) const;
     /*! See SolverBase */
+    void setPerturbation(const std::vector<float>& dx) const;
+    /*! Compute v'* H * v (used in Double DogLeg) */
+    float HessianSymmetricProduct(const std::vector<float>& v) const;
+    /*! See SolverBase */
     void push();
     /*! See SolverBase */
     void pop();

@@ -5,7 +5,6 @@
 #include <srrg_solver/variables_and_factors/types_2d/variable_se2_ad.h>
 #include <srrg_solver/variables_and_factors/types_3d/variable_point3_ad.h>
 #include <srrg_solver/variables_and_factors/types_calib/variable_time_ad.h>
-
 namespace srrg2_solver {
 
   using TimeIsometry2Map  = std::map<float, Isometry2f>;

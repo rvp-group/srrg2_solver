@@ -23,9 +23,9 @@ namespace srrg2_solver {
       _inverse_measurement = _measurement.inverse();
     }
 
-    void errorAndJacobian(bool error_only_ = false) final;
+    void errorAndJacobian(bool error_only_ = false) override;
 
-    void draw(ViewerCanvasPtr canvas_) const final;
+    void _drawImpl(ViewerCanvasPtr canvas_) const;
 
   protected:
     MeasurementType _inverse_measurement = MeasurementType::Identity();

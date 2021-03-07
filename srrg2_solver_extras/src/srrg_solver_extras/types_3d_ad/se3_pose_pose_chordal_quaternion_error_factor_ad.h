@@ -36,7 +36,7 @@ namespace srrg2_solver_extras {
       convertMatrix(_ad_measurement, iso);
     }
 
-    void draw(ViewerCanvasPtr canvas_) const override;
+    void _drawImpl(ViewerCanvasPtr canvas_) const override;
 
   protected:
     // here we store the measurement

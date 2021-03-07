@@ -1,2 +1,3 @@
 add_subdirectory(factor_graph_utils)
+add_subdirectory(calib_utils)
 add_subdirectory(g2o_converter)

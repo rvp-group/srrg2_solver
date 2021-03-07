@@ -22,9 +22,7 @@ add_library(srrg2_solver_types3d_library SHARED
   # tg pose-pose factors
   se3_pose_pose_geodesic_error_factor.cpp se3_pose_pose_geodesic_error_factor.h
   se3_pose_pose_chordal_error_factor.cpp se3_pose_pose_chordal_error_factor.h
-
-  # ldg pose-pose-offset factors
-  se3_pose_pose_offset_error_factor_ad.cpp se3_pose_pose_offset_error_factor_ad.h
+  se3_pose_pose_chordal_hessian_factor.cpp se3_pose_pose_chordal_hessian_factor.h
  
   instances.h
   instances.cpp

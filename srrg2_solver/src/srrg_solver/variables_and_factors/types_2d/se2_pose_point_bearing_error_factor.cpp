@@ -30,14 +30,13 @@ namespace srrg2_solver {
     // tg derivative of the trace with respect to the predicted angle
     float dtrace_dprediction = 2.f * sin(predicted_angle - angle);
     // tg Jacobian of the bearing prediction with respect to the predicted point
-    Vector2f J_prediction = -1.0f * geometry2d::skew(predicted_point);
-    J_prediction /= predicted_point.squaredNorm();
+    Vector2f J_atan = -1.0f * geometry2d::skew(predicted_point);
+    J_atan /= predicted_point.squaredNorm();
     auto J_pose              = jacobian<0>();
-    J_pose.block<1, 2>(0, 0) = -dtrace_dprediction * J_prediction.transpose();
-    J_pose(0, 2) =
-      dtrace_dprediction * J_prediction.transpose() * geometry2d::skew(predicted_point);
+    J_pose.block<1, 2>(0, 0) = -dtrace_dprediction * J_atan.transpose();
+    J_pose(0, 2) = dtrace_dprediction * J_atan.transpose() * geometry2d::skew(predicted_point);
     auto J_point = jacobian<1>();
-    J_point      = dtrace_dprediction * J_prediction.transpose() * R.transpose();
+    J_point      = dtrace_dprediction * J_atan.transpose() * R.transpose();
   }
 
   INSTANTIATE(SE2PosePointBearingErrorFactor)

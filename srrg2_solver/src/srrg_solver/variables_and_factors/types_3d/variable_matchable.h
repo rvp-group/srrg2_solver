@@ -21,6 +21,6 @@ namespace srrg2_solver {
     //! @brief deserialization of the variable through BOSS.
     void deserialize(ObjectData& odata, IdContext& context) override;
     
-    void draw(ViewerCanvasPtr canvas_) const override;
+    void _drawImpl(ViewerCanvasPtr canvas_) const override;
   };
 } // namespace srrg2_solver

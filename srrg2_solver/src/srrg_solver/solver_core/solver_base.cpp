@@ -1,6 +1,7 @@
 #include <cassert>
 #include <srrg_property/property_vector.h>
 #include <srrg_system_utils/shell_colors.h>
+#include <srrg_config/configurable_command.h>
 
 #include "iteration_algorithm_base.h"
 #include "iteration_algorithm_gn.h"
@@ -15,55 +16,42 @@ namespace srrg2_solver {
   using namespace std;
   using namespace srrg2_core;
 
-  struct CommandCompute : public Configurable::CommandBase {
-  public:
-    CommandCompute(SolverBase* solver) :
-      Configurable::CommandBase(solver, "compute", ": runs the optimizer") {
-    }
-
-    bool execute(srrg2_core::ConfigurableShell* shell_,
-                 std::string& response,
-                 const std::vector<std::string>& tokens) override {
-      std::ostringstream os;
-      os << "module: " << _configurable->className() << " ptr: " << _configurable << std::endl;
-      os << "computing ... " << std::endl;
-      SolverBase* solver = dynamic_cast<SolverBase*>(_configurable);
-      if (!solver) {
-        throw std::runtime_error("type mismatch");
-      }
-      solver->compute();
-      os << "Done!" << std::endl;
-      response = os.str();
-      return true;
-    }
-  };
-
-  struct CommandStats : public Configurable::CommandBase {
-  public:
-    CommandStats(SolverBase* solver) :
-      Configurable::CommandBase(solver, "stats", ": displays the statistics") {
-    }
-
-    bool execute(srrg2_core::ConfigurableShell* shell_,
-                 std::string& response,
-                 const std::vector<std::string>& tokens) override {
-      std::ostringstream os;
-      os << "module: " << _configurable->className() << " ptr: " << _configurable << std::endl;
-      os << "stats: " << std::endl;
-      SolverBase* solver = dynamic_cast<SolverBase*>(_configurable);
-      if (!solver) {
-        throw std::runtime_error("type mismatch");
-      }
-      os << solver->iterationStats() << std::endl;
-      response = os.str();
-      return true;
-    }
-  };
-
-  SolverBase::SolverBase() {
-    addCommand(new CommandStats(this));
-    addCommand(new CommandCompute(this));
+  bool SolverBase::cmdCompute(std::string& response) {
+    response = className() + "|compute... ";
+    compute();
+    response += "Done";
+    return true;
   }
+
+  bool SolverBase::cmdStats(std::string& response) {
+    std::ostringstream os;
+    os << className() + "|stats" << std::endl;
+    os << iterationStats() << std::endl;
+    response = os.str();
+    return true;
+  }
+  
+  SolverBase::SolverBase() {
+    addCommand (new ConfigurableCommand_
+                < SolverBase,
+                typeof(&SolverBase::cmdCompute),
+                std::string>
+                (this,
+                 "compute",
+                 "starts a computation",
+                 &SolverBase::cmdCompute
+                 ));
+    addCommand (new ConfigurableCommand_
+                < SolverBase,
+                typeof(&SolverBase::cmdStats),
+                std::string>
+                (this,
+                 "stats",
+                 "prints the stats of the last computation",
+                 &SolverBase::cmdStats
+                 ));
+  }
+  
 
   void SolverBase::installPreiterationAction(const SolverActionBasePtr& action_) {
     if (_preiteration_actions.count(action_)) {
@@ -105,6 +93,11 @@ namespace srrg2_solver {
       throw std::runtime_error("SolverBase::prepareForCompute|no algorithm set");
     }
     _compute_changed_flag = false;
+  }
+
+  void SolverBase::prepareForNewLevel() {
+    
+    allocateStructures();
   }
 
   void SolverBase::compute() {

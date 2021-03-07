@@ -188,15 +188,16 @@ namespace srrg2_solver {
         throw std::runtime_error("SparseBlockCholesky::blockBackwardSubstitution| missing diagonal block index");
       }
 
-      MatrixBlockBase* invL_cc = factory->createBlock(transpose_invL_cc->rows(),transpose_invL_cc->cols());
-      transpose_invL_cc->transposeTo(invL_cc);
+      MatrixBlockBasePtr invL_cc(
+        factory->createBlock(transpose_invL_cc->rows(), transpose_invL_cc->cols()));
+      transpose_invL_cc->transposeTo(invL_cc.get());
       // get the corresponding row element and compute the solution for the block
       IntBlockMap::iterator row_element = x.find(c);
       if(row_element == x.end()){
         continue;
       }
       MatrixBlockBase* x_c = row_element->second.get();
-      x_c->leftMatMulInPlace(invL_cc);
+      x_c->leftMatMulInPlace(invL_cc.get());
       // apply the result to all the other variables
       for(int r=c-1; r>=0; --r){
         const MatrixBlockBase* L_rc = blockAt(r,c);
@@ -213,8 +214,6 @@ namespace srrg2_solver {
           block->subAxB(L_rc,x_c);
         }
       }
-      // release the memory for the transpose inverse block
-      delete invL_cc;
     }
     return true;
   }

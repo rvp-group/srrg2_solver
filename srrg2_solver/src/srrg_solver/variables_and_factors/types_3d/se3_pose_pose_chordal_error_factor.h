@@ -17,6 +17,6 @@ namespace srrg2_solver {
     using Scalar   = MeasurementType::Scalar;
     void errorAndJacobian(bool error_only_ = false) final;
 
-    void draw(ViewerCanvasPtr canvas_) const override;
+    void _drawImpl(ViewerCanvasPtr canvas_) const override;
   };
 } // namespace srrg2_solver

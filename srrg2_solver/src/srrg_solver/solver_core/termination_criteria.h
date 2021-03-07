@@ -45,19 +45,23 @@ namespace srrg2_solver {
     bool hasToStop() const override;
   };
 
-  /*! @brief Gradient norm based termination criteria, stop if the norm of the gradient is below the
-   * threshold */
-  class GradientNormTerminationCriteria : public TerminationCriteria {
+  /*! @brief Perturbation norm based termination criteria, stop if the norm of the gradient is below
+   * the threshold */
+  class PerturbationNormTerminationCriteria : public TerminationCriteria {
   public:
-    PARAM(PropertyFloat, epsilon, "maximum gradient norm", 1e-5, 0);
+    PARAM(PropertyFloat, epsilon, "maximum perturbation norm", 1e-5, 0);
     bool hasToStop() const override;
   };
 
   /*! @brief Perturbation norm based termination criteria, stop if the norm of the perturbation
    (solution of the linearized system) is below the threshold */
-  class PerturbationNormTerminationCriteria : public TerminationCriteria {
+  class RelativeGradientChiTerminationCriteria : public TerminationCriteria {
   public:
-    PARAM(PropertyFloat, epsilon, "maximum perturbation norm", 1e-5, 0);
+    PARAM(PropertyFloat,
+          epsilon,
+          "threshold for formula ||gradient|| < epsilon (1 + || error ||)",
+          0.001,
+          0);
     bool hasToStop() const override;
   };
 

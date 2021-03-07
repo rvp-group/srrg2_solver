@@ -11,7 +11,7 @@
 namespace srrg2_solver_extras {
   using namespace srrg2_core;
   using namespace srrg2_solver;
-  void SE2PosePoseLeftErrorFactorAD::draw(srrg2_core::ViewerCanvasPtr canvas) const {
+  void SE2PosePoseLeftErrorFactorAD::_drawImpl(srrg2_core::ViewerCanvasPtr canvas) const {
     if (!canvas) {
       return;
     }

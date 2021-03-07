@@ -21,7 +21,7 @@ namespace srrg2_solver {
 
     virtual void setZero() override;
 
-    void draw(ViewerCanvasPtr canvas_) const override;
+    void _drawImpl(ViewerCanvasPtr canvas_) const override;
   };
 
   /** SE3 Pose Variable specialized by the perturbation side and angle representation.

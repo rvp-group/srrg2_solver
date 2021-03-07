@@ -25,14 +25,10 @@ namespace srrg2_solver {
       @return The factor pointer
      */
     FactorBase* factor(FactorBase::Id id);
-    void printVariables() const;
+    void printVariables();
     virtual ~FactorGraphInterface();
-    /*! @return The container of variable pointers (read only) */
-    virtual const IdVariablePtrContainer& variables() const = 0;
     /*! @return The container of variable pointers  */
     virtual IdVariablePtrContainer& variables() = 0;
-    /*! @return The container of factor pointers (read only) */
-    virtual const IdFactorPtrContainer& factors() const = 0;
     /*! @return The container of factor pointers  */
     virtual IdFactorPtrContainer& factors() = 0;
     /*! Connect a factor with the corresponding variables
@@ -91,17 +87,13 @@ namespace srrg2_solver {
     friend class FactorGraphViewSelector;
 
   public:
-    using IdVariableRawPtrMap = AbstractMap_<VariableBase::Id, VariableBase const*>;
-    using IdFactorRawPtrMap   = AbstractMap_<FactorBase::Id, FactorBase const*>;
+    using IdVariableRawPtrMap = AbstractMap_<VariableBase::Id, VariableBase*>;
+    using IdFactorRawPtrMap   = AbstractMap_<FactorBase::Id, FactorBase*>;
     virtual ~FactorGraphView();
-    /*! @return The container of variable pointers (read only)*/
-    virtual const IdVariablePtrContainer& variables() const;
     /*! @return The container of variable pointers*/
-    virtual IdVariablePtrContainer& variables();
-    /*! @return The container of factor pointers (read only) */
-    virtual const IdFactorPtrContainer& factors() const;
+    IdVariablePtrContainer& variables() override;
     /*! @return The container of factor pointers*/
-    virtual IdFactorPtrContainer& factors();
+    IdFactorPtrContainer& factors() override;
 
   protected:
     IdVariableRawPtrMap _variables; /*!< Id to variable raw pointer container */
@@ -136,12 +128,15 @@ namespace srrg2_solver {
       @return false if the factor was not in the graph
     */
     bool removeFactor(FactorBasePtr factor);
+    /*! Auxiliary function used to remove a factor from the graph using a raw pointer
+      @param[in] factor raw pointer to factor
+      @return false if the factor was not present in the graph
+    */
+    bool removeFactor(FactorBase* factor);
 
     virtual ~FactorGraph();
 
-    const IdVariablePtrContainer& variables() const override;
     IdVariablePtrContainer& variables() override;
-    const IdFactorPtrContainer& factors() const override;
     IdFactorPtrContainer& factors() override;
 
     void serialize(ObjectData& odata, IdContext& context) override;
@@ -162,20 +157,20 @@ namespace srrg2_solver {
       return _last_graph_id;
     }
 
+    inline void setSerializationLevel(const int& level_) {
+      _level_serialization = level_;
+    }
+
   protected:
     using IdVariablePtrMap =
       AbstractPtrMap_<VariableBase::Id, VariableBase, std::shared_ptr<VariableBase>>;
     using IdFactorPtrMap = AbstractPtrMap_<FactorBase::Id, FactorBase, std::shared_ptr<FactorBase>>;
     IdFactorPtrMap _factors;     /*!< Id to factor shared pointer container */
     IdVariablePtrMap _variables; /*!< Id to variable shared pointer container */
-    /*! Auxiliary function used to remove a factor from the graph using a raw pointer
-      @param[in] factor raw pointer to factor
-      @return false if the factor was not present in the graph
-    */
-    bool removeFactor(FactorBase* factor);
 
   private:
     Id _last_graph_id = 0; /*!< Last graph id */
+    int _level_serialization = 0;
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

@@ -17,5 +17,6 @@ namespace srrg2_solver {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     void errorAndJacobian(bool error_only_ = false) final;
+    void _drawImpl(ViewerCanvasPtr canvas_) const override;
   };
 } // namespace srrg2_solver

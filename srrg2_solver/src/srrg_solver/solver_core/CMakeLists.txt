@@ -21,6 +21,12 @@ add_library(srrg2_solver_core_library SHARED
   iteration_algorithm_lm.h
   iteration_algorithm_lm.cpp
 
+  iteration_algorithm_dl.h
+  iteration_algorithm_dl.cpp
+
+  iteration_algorithm_ddl.h
+  iteration_algorithm_ddl.cpp
+
   robustifier.h
   robustifier.cpp
 

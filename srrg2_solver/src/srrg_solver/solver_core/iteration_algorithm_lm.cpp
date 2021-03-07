@@ -101,7 +101,6 @@ namespace srrg2_solver {
       scale += 1e-3;
       // tg compute actual chi variation
       chi_delta = (current_chi - temp_chi) / scale;
-
       // tg if the solution is good
       if (chi_delta > 0 && std::isfinite(current_chi)) {
         // tg compute actual reduction ratio for lambda
@@ -113,7 +112,7 @@ namespace srrg2_solver {
         _lambda *= proposed_scale;
         current_chi = temp_chi;
         discardTop();
-
+        istat.num_internal_iteration = lm_iteration;
         iterationStats().push_back(istat);
         return true;
       } else {
@@ -129,6 +128,7 @@ namespace srrg2_solver {
       ++lm_iteration;
     } while (chi_delta < 0 && lm_iteration < param_lm_iterations_max.value());
 
+    setDiagonal(_diagonal);
     istat.num_internal_iteration = lm_iteration;
     // ia in this way we have a single stat for outer LM iter
     iterationStats().push_back(istat);

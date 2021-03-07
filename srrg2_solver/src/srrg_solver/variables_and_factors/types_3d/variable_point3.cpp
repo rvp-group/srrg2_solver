@@ -16,7 +16,7 @@ namespace srrg2_solver {
     _estimate += pert;
   }
 
-  void VariablePoint3::draw(ViewerCanvasPtr canvas_) const {
+  void VariablePoint3::_drawImpl(ViewerCanvasPtr canvas_) const {
     if (!canvas_)
       throw std::runtime_error("VariablePoint3::draw|invalid canvas");
     canvas_->pushColor();

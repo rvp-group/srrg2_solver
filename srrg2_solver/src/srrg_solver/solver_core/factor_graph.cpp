@@ -16,7 +16,7 @@ namespace srrg2_solver {
     _variable_factor_map.clear();
   }
 
-  void FactorGraphInterface::printVariables() const {
+  void FactorGraphInterface::printVariables() {
     for (auto it = variables().begin(); it != variables().end(); ++it) {
       const VariableBase* const v = it.value();
       cerr << "id: " << v->graphId() << " " << v->status() << endl;
@@ -28,7 +28,7 @@ namespace srrg2_solver {
     if (it == variables().end()) {
       return 0;
     }
-    VariableBase* v = const_cast<VariableBase*>(it.value());
+    VariableBase* v = it.value();
     return v;
   }
 
@@ -37,7 +37,7 @@ namespace srrg2_solver {
     if (it == factors().end()) {
       return 0;
     }
-    FactorBase* f = const_cast<FactorBase*>(it.value());
+    FactorBase* f = it.value();
     return f;
   }
 
@@ -77,7 +77,7 @@ namespace srrg2_solver {
     _variable_factor_map.clear();
     int unbinded_vars = 0;
     for (auto it = factors().begin(); it != factors().end(); ++it) {
-      FactorBase* f = const_cast<FactorBase*>(it.value());
+      FactorBase* f = it.value();
       unbinded_vars += bindFactor(f);
     }
     if (unbinded_vars > 0) {
@@ -105,16 +105,8 @@ namespace srrg2_solver {
     clear();
   }
 
-  const IdVariablePtrContainer& FactorGraphView::variables() const {
-    return _variables;
-  }
-
   IdVariablePtrContainer& FactorGraphView::variables() {
     return _variables;
-  }
-
-  const IdFactorPtrContainer& FactorGraphView::factors() const {
-    return _factors;
   }
 
   IdFactorPtrContainer& FactorGraphView::factors() {
@@ -125,16 +117,8 @@ namespace srrg2_solver {
     clear();
   }
 
-  const IdVariablePtrContainer& FactorGraph::variables() const {
-    return _variables;
-  }
-
   IdVariablePtrContainer& FactorGraph::variables() {
     return _variables;
-  }
-
-  const IdFactorPtrContainer& FactorGraph::factors() const {
-    return _factors;
   }
 
   IdFactorPtrContainer& FactorGraph::factors() {
@@ -143,15 +127,28 @@ namespace srrg2_solver {
 
   void FactorGraph::serialize(ObjectData& odata, IdContext& context) {
     using namespace std;
+    std::set<VariableBase::Id> selected_variables;
+    std::vector<FactorBase*> selected_factors;
+    for (auto it = factors().begin(); it != factors().end(); ++it) {
+      FactorBase* f = it.value();
+      if (f->level() != _level_serialization) {
+        continue;
+      }
+      selected_factors.push_back(f);
+      int num_var = f->numVariables();
+      for (int v = 0; v < num_var; ++v) {
+        selected_variables.insert(f->variableId(v));
+      }
+    }
     ArrayData* var_data = new ArrayData;
-    for (auto it = _variables.begin(); it != _variables.end(); ++it) {
-      VariableBase* v = const_cast<VariableBase*>(it.value());
+    for (auto it = selected_variables.begin(); it != selected_variables.end(); ++it) {
+      VariableBase* v = this->variable(*it);
       var_data->addPointer(v);
     }
     odata.setField("variables", var_data);
     ArrayData* fact_data = new ArrayData;
-    for (auto it = _factors.begin(); it != _factors.end(); ++it) {
-      FactorBase* f = const_cast<FactorBase*>(it.value());
+    for (auto it = selected_factors.begin(); it != selected_factors.end(); ++it) {
+      FactorBase* f = *it;
       fact_data->addPointer(f);
     }
     odata.setField("factors", fact_data);
@@ -238,15 +235,29 @@ namespace srrg2_solver {
   // convenience function to write a factor graph to a file
   void FactorGraph::write(const std::string& filename) {
     using namespace std;
+    bindFactors();
+    std::set<VariableBase::Id> selected_variables;
+    std::vector<FactorBase*> selected_factors;
+    for (auto it = factors().begin(); it != factors().end(); ++it) {
+      FactorBase* f = it.value();
+      if (f->level() != _level_serialization) {
+        continue;
+      }
+      selected_factors.push_back(f);
+      int num_var = f->numVariables();
+      for (int v = 0; v < num_var; ++v) {
+        selected_variables.insert(f->variableId(v));
+      }
+    }
+
     Serializer ser;
     ser.setFilePath(filename);
-    for (auto it = variables().begin(); it != variables().end(); ++it) {
-      VariableBase* v = const_cast<VariableBase*>(it.value());
-      ser.writeObject(*v);
+    for (VariableBase::Id v : selected_variables) {
+      VariableBase* variable = this->variable(v);
+      ser.writeObject(*variable);
     }
-    for (auto it = factors().begin(); it != factors().end(); ++it) {
-      FactorBase* f = const_cast<FactorBase*>(it.value());
-      ser.writeObject(*f);
+    for (FactorBase* factor : selected_factors) {
+      ser.writeObject(*factor);
     }
     ser.writeObject(*this);
   }

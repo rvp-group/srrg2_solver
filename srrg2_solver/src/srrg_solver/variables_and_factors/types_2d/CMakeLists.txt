@@ -12,6 +12,7 @@ add_library(srrg2_solver_types2d_library SHARED
   se2_pose_pose_chordal_error_factor.cpp se2_pose_pose_chordal_error_factor.h
   se2_pose_point_error_factor.cpp se2_pose_point_error_factor.h
   se2_pose_point_bearing_error_factor.cpp se2_pose_point_bearing_error_factor.h
+  
   instances.h
   instances.cpp
   )

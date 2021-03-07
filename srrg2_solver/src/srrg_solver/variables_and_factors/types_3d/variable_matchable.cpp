@@ -105,7 +105,7 @@ namespace srrg2_solver {
     }
   }
 
-  void VariableMatchable::draw(ViewerCanvasPtr canvas_) const {
+  void VariableMatchable::_drawImpl(ViewerCanvasPtr canvas_) const {
     if (!canvas_)
       throw std::runtime_error("VariableMatchable::draw|invalid canvas");
     canvas_->pushColor();

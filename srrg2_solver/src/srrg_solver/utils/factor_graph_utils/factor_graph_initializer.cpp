@@ -1,6 +1,7 @@
 #include "factor_graph_initializer.h"
 #include "srrg_solver/variables_and_factors/types_2d/instances.h"
 #include "srrg_solver/variables_and_factors/types_3d/instances.h"
+#include "srrg_solver/variables_and_factors/types_projective/instances.h"
 
 namespace srrg2_solver {
 
@@ -11,7 +12,9 @@ namespace srrg2_solver {
     // populate the entry structure to hold the visit
     // populate the queue with all fixed variables
     for (auto it = _graph->variables().begin(); it != _graph->variables().end(); ++it) {
-      VariableBase* variable    = const_cast<VariableBase*>(it.value());
+      VariableBase* variable    = it.value();
+      if (variable->status() == VariableBase::NonActive)
+        continue;
       VariableVisitEntry* entry = new VariableVisitEntry(variable);
       if (variable->status() == VariableBase::Fixed) {
         entry->cost = 0;
@@ -21,6 +24,33 @@ namespace srrg2_solver {
       }
       _entries.add(entry);
     }
+    //std::cerr << "queue.size()" << _queue.size() << std::endl;
+  }
+
+  void FactorGraphInitializer::updateGraph() {
+    // populate the queue with all variables that are fixed
+    // and all the ones that have been initialized
+    
+    for (auto it = _graph->variables().begin(); it != _graph->variables().end(); ++it) {
+      VariableBase* variable    = it.value();
+      if (variable->status() == VariableBase::NonActive)
+        continue;
+      VariableVisitEntry* entry = _entries.at(variable->graphId());
+      if (entry) {
+        if (entry->cost>=0)
+          _queue.push(entry);
+      } else {
+        VariableVisitEntry* entry = new VariableVisitEntry(variable);
+        if (variable->status() == VariableBase::Fixed) {
+          entry->cost = 0;
+          _queue.push(entry);
+        } else {
+          entry->cost=-1;
+        }
+        _entries.add(entry);
+      }
+    }
+    //std::cerr << "queue.size()" << _queue.size() << std::endl;
   }
 
   void FactorGraphInitializer::compute() {
@@ -34,6 +64,8 @@ namespace srrg2_solver {
       for (; f_it != f_upper; ++f_it) {
         int v_pos          = -1;
         FactorBase* f = f_it->second;
+        if (! f->enabled())
+          continue;
         for (int i = 0; i < f->numVariables(); ++i) {
           if (f->variable(i) == v) {
             e->var_pos = i;
@@ -73,7 +105,8 @@ namespace srrg2_solver {
 
   bool FactorGraphInitializer::isInit(VariableBase* v) {
     VariableVisitEntry* ne = _entries.at(v->graphId());
-    assert(ne && "bookkeeping error 2");
+    if (! ne)
+      return false;
     return ne->cost >= 0;
   }
 
@@ -96,7 +129,7 @@ namespace srrg2_solver {
         VariableSE2Base* root_v = this_factor->variables().at<0>();
         if (root_v == v) {
           root_v = this_factor->variables().at<1>();
-          direct = true;
+          direct = false;
         }
         if (!_initializer->isInit(root_v))
           continue;
@@ -106,7 +139,7 @@ namespace srrg2_solver {
         } else {
           v->setEstimate(root_v->estimate() * this_factor->measurement().inverse());
         }
-        std::cerr << "se2 pose_pose init" << root_v->graphId() << " " << v->graphId() << std::endl;
+        //std::cerr << "se2 pose_pose init" << root_v->graphId() << " " << v->graphId() << std::endl;
         return true;
       }
       return false;
@@ -133,7 +166,7 @@ namespace srrg2_solver {
         if (!_initializer->isInit(root_v))
           continue;
         v->setEstimate(root_v->estimate() * this_factor->measurement());
-        std::cerr << "se2 pose_point init" << root_v->graphId() << " " << v->graphId() << std::endl;
+        //std::cerr << "se2 pose_point init" << root_v->graphId() << " " << v->graphId() << std::endl;
         return true;
       }
       return false;
@@ -183,7 +216,7 @@ namespace srrg2_solver {
       x -= (H).ldlt().solve(b);
       v->setEstimate(x);
       // todo: check for consistency of solution, otherwise disable variable
-      std::cerr << "se2 pose point bearinf :" << x.transpose() << std::endl;
+      //std::cerr << "se2 pose point bearinf :" << x.transpose() << std::endl;
       return true;
     }
   };
@@ -207,7 +240,7 @@ namespace srrg2_solver {
         VariableSE3Base* root_v = this_factor->variables().at<0>();
         if (root_v == v) {
           root_v = this_factor->variables().at<1>();
-          direct = true;
+          direct = false;
         }
         if (!_initializer->isInit(root_v))
           continue;
@@ -217,7 +250,43 @@ namespace srrg2_solver {
         } else {
           v->setEstimate(root_v->estimate() * this_factor->measurement().inverse());
         }
-        std::cerr << "se3 pose_pose init" << root_v->graphId() << " " << v->graphId() << std::endl;
+        //std::cerr << "se3 pose_pose init" << root_v->graphId() << " " << v->graphId() << std::endl;
+        return true;
+      }
+      return false;
+    }
+  };
+
+  struct Sim3toSim3InitializerRule : public FactorGraphInitializerRule_<VariableSim3Base> {
+    Sim3toSim3InitializerRule(FactorGraphInitializer* initializer_) :
+      FactorGraphInitializerRule_<VariableSim3Base>(initializer_) {
+    }
+
+    bool doInit(VariableSim3Base* v) override {
+      FactorGraphInterface* _graph = _initializer->_graph;
+      auto f_it                    = _graph->lowerFactor(v);
+      auto f_end                   = _graph->upperFactor(v);
+      for (; f_it != f_end; ++f_it) {
+        FactorBase* f = f_it->second;
+        Sim3PosePoseErrorFactorAD* this_factor =
+          dynamic_cast<Sim3PosePoseErrorFactorAD*>(f);
+        if (!this_factor)
+          continue;
+        bool direct             = true;
+        VariableSim3Base* root_v = this_factor->variables().at<0>();
+        if (root_v == v) {
+          root_v = this_factor->variables().at<1>();
+          direct = false;
+        }
+        if (!_initializer->isInit(root_v))
+          continue;
+
+        if (direct) {
+          v->setEstimate(root_v->estimate() * this_factor->measurement());
+        } else {
+          v->setEstimate(root_v->estimate() * this_factor->measurement().inverse());
+        }
+        //std::cerr << "se3 pose_pose init" << root_v->graphId() << " " << v->graphId() << std::endl;
         return true;
       }
       return false;
@@ -243,7 +312,7 @@ namespace srrg2_solver {
         if (!_initializer->isInit(root_v))
           continue;
         v->setEstimate(root_v->estimate() * this_factor->measurement());
-        std::cerr << "se3 pose_point init" << root_v->graphId() << " " << v->graphId() << std::endl;
+        //std::cerr << "se3 pose_point init" << root_v->graphId() << " " << v->graphId() << std::endl;
         return true;
       }
       return false;
@@ -273,11 +342,59 @@ namespace srrg2_solver {
           continue;
 
         v->setEstimate(root_v->estimate() * offset_v->estimate() * this_factor->measurement());
-        std::cerr << "se3 pose_point_offset init" << root_v->graphId() << " " << v->graphId()
-                  << std::endl;
+        //std::cerr << "se3 pose_point_offset init" << root_v->graphId() << " " << v->graphId() << std::endl;
         return true;
       }
       return false;
+    }
+  };
+
+
+  struct SE3toPoint3OmniBAInitializerRule : public FactorGraphInitializerRule_<VariablePoint3> {
+    SE3toPoint3OmniBAInitializerRule(FactorGraphInitializer* initializer_) :
+      FactorGraphInitializerRule_<VariablePoint3>(initializer_) {
+    }
+
+    bool doInit(VariablePoint3* v) override {
+      FactorGraphInterface* _graph = _initializer->_graph;
+      auto f_it                    = _graph->lowerFactor(v);
+      auto f_end                   = _graph->upperFactor(v);
+      std::list<SE3PosePointOmniBAErrorFactor*> active_factors;
+
+      for (; f_it != f_end; ++f_it) {
+        FactorBase* f = f_it->second;
+        SE3PosePointOmniBAErrorFactor* this_factor =
+          dynamic_cast<SE3PosePointOmniBAErrorFactor*>(f);
+        if (!this_factor) {
+          continue;
+        }
+        VariableSE3Base* root_v = this_factor->variables().at<0>();
+        if (!_initializer->isInit(root_v))
+          continue;
+        active_factors.push_back(this_factor);
+      }
+      if (active_factors.size() < 3)
+        return false;
+      // do a triangulation with the factors
+      Matrix3f H = Matrix3f::Zero();
+      Vector3f b = Vector3f::Zero();
+      Vector3f x = v->estimate();
+      for (auto it = active_factors.begin(); it != active_factors.end(); ++it) {
+        SE3PosePointOmniBAErrorFactor* f = *it;
+        VariableSE3Base* pose                    = f->variables().at<0>();
+        VariableSE3Base* offset                  = f->variables().at<2>();
+        Vector3f d        = pose->estimate().linear()*offset->estimate().linear()*f->measurement();
+        Matrix3f J=geometry3d::skew(d);
+        const Vector3f& p = pose->estimate()*offset->estimate().translation();
+        Vector3f e        = J*(x - p);
+        H += J.transpose() * J;
+        b += J.transpose() * e;
+      }
+      x -= (H).ldlt().solve(b);
+      v->setEstimate(x);
+      // todo: check for consistency of solution, otherwise disable variable
+      //std::cerr << "se3 pose point omni ba:" << x.transpose() << std::endl;
+      return true;
     }
   };
 
@@ -288,6 +405,8 @@ namespace srrg2_solver {
     _rules.push_back(FactorGraphInitializerRulePtr(new SE3toSE3InitializerRule(this)));
     _rules.push_back(FactorGraphInitializerRulePtr(new SE3toPoint3InitializerRule(this)));
     _rules.push_back(FactorGraphInitializerRulePtr(new SE3toPoint3OffsetInitializerRule(this)));
+    _rules.push_back(FactorGraphInitializerRulePtr(new SE3toPoint3OmniBAInitializerRule(this)));
+    _rules.push_back(FactorGraphInitializerRulePtr(new Sim3toSim3InitializerRule(this)));
   }
 
 } // namespace srrg2_solver

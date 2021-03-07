@@ -1,6 +1,7 @@
 #include "solver.h"
 #include "srrg_solver/solver_core/internals/sparse_block_matrix/matrix_block_factory.h"
 #include <srrg_system_utils/system_utils.h>
+#include <srrg_config/configurable_command.h>
 #include <sstream>
 
 namespace srrg2_core {
@@ -10,66 +11,25 @@ namespace srrg2_core {
 namespace srrg2_solver {
   using namespace srrg2_core;
   using namespace std;
-
-  struct CommandLoadGraph : public Configurable::CommandBase {
-  public:
-    CommandLoadGraph(Solver* solver) :
-      Configurable::CommandBase(solver, "load", "load <filename>: loads the graph from filename") {
-    }
-
-    bool execute(srrg2_core::ConfigurableShell* shell_,
-                 std::string& response,
-                 const std::vector<std::string>& tokens) override {
-      if (tokens.size() < 2) {
-        response = "Solver| load requires a filename";
-        return false;
-      }
-      Solver* solver = dynamic_cast<Solver*>(_configurable);
-      if (!solver) {
-        throw std::runtime_error("type mismatch");
-      }
-      std::ostringstream os;
-      os << "module: " << _configurable->className() << " ptr: " << _configurable << std::endl;
-      os << "reading graph from file [" << tokens[1] << std::endl;
-      solver->setGraph(FactorGraph::read(tokens[1]));
-      response = os.str();
-      return true;
-    }
-  };
-
-  struct CommandSaveGraph : public Configurable::CommandBase {
-  public:
-    CommandSaveGraph(Solver* solver) :
-      Configurable::CommandBase(solver, "save", "save <filename>: saves the graph to filename") {
-    }
-
-    bool execute(srrg2_core::ConfigurableShell* shell_,
-                 std::string& response,
-                 const std::vector<std::string>& tokens) override {
-      if (tokens.size() < 2) {
-        response = "Solver| save requires a filename";
-        return false;
-      }
-      Solver* solver = dynamic_cast<Solver*>(_configurable);
-      if (!solver) {
-        throw std::runtime_error("type mismatch");
-      }
-      FactorGraphPtr graph = std::dynamic_pointer_cast<FactorGraph>(solver->graph());
-      if (!graph) {
-        response = "no graph, cannot save";
-      }
-      std::ostringstream os;
-      os << "module: " << _configurable->className() << " ptr: " << _configurable << std::endl;
-      os << "saving graph to file [" << tokens[1] << std::endl;
-      graph->write(tokens[1]);
-      response = os.str();
-      return true;
-    }
-  };
+  
 
   Solver::Solver() {
-    addCommand(new CommandLoadGraph(this));
-    addCommand(new CommandSaveGraph(this));
+    addCommand (new ConfigurableCommand_
+                < Solver, typeof(&Solver::cmdLoadGraph), std::string, std::string>
+                (this,
+                 "load",
+                 "loads a graph from a json file",
+                 &Solver::cmdLoadGraph));
+
+    addCommand (new ConfigurableCommand_
+                < Solver, typeof(&Solver::cmdSaveGraph), std::string, std::string>
+                (this,
+                 "save",
+                 "saves a graph to a json file",
+                 &Solver::cmdSaveGraph));
+
+    // addCommand(new CommandLoadGraph(this));
+    // addCommand(new CommandSaveGraph(this));
     MatrixBlockFactory* factory = MatrixBlockFactory::instance();
     factory->addAllocator<1, 1>();
     factory->addAllocator<6, 6>();
@@ -106,6 +66,37 @@ namespace srrg2_solver {
     factory->addAllocator<1, 7>();
   }
 
+  bool Solver::cmdSaveGraph(std::string& response, const std::string& filename) {
+    response = "saving graph to file [" + filename +"]";
+    return saveGraph(filename);
+  }
+
+  bool Solver::cmdLoadGraph(std::string& response, const std::string& filename) {
+    response = "loading graph from file [" + filename +"]";
+    return loadGraph(filename);
+  }
+
+  bool Solver::saveGraph(const std::string& filename){
+    if (! _graph) {
+      return false;
+    }
+    FactorGraphPtr graph = std::dynamic_pointer_cast<FactorGraph>(_graph);
+    if (!graph) {
+      std::cerr <<  "no real graph, cannot save" << std::endl;
+    }
+    graph->write(filename);
+    return true;
+  }
+
+  bool Solver::loadGraph(const std::string& filename){
+    FactorGraphPtr graph_=FactorGraph::read(filename);
+    if (! graph_) {
+      return false;
+    }
+    setGraph(graph_);
+    return true;
+  }
+
   void Solver::allocateStructures() {
     if (!param_linear_solver.value())
       throw std::runtime_error("Solver::allocateStructures|ERROR, no linear solver set");
@@ -122,7 +113,7 @@ namespace srrg2_solver {
     std::map<int, int> num_active_factors_per_level;
     IdFactorPtrContainer& facts = _graph->factors();
     for (auto it = facts.begin(); it != facts.end(); ++it) {
-      FactorBase* f = const_cast<FactorBase*>(it.value());
+      FactorBase* f = it.value();
       assert(f && "factor null");
       if (!f->enabled()) {
         continue;
@@ -331,7 +322,7 @@ namespace srrg2_solver {
 
     int num_vars = 0;
     for (auto it = factors.begin(); it != factors.end(); ++it) {
-      FactorBase* f = const_cast<FactorBase*>(it.value());
+      FactorBase* f = it.value();
       num_vars += f->bind(variables);
     }
     if (num_vars > 0) {
@@ -355,11 +346,39 @@ namespace srrg2_solver {
   }
 
   void Solver::prepareForNewLevel() {
+    IdFactorPtrContainer& factors     = _graph->factors();
+    for (auto it = factors.begin(); it != factors.end(); ++it) {
+      FactorBase* f = it.value();
+      f->_current_level=_current_level;
+    }
     assignRobustifiers();
     computeActiveVariables();
     computeOrdering();
     allocateWorkspace();
     SolverBase::prepareForNewLevel();
+  }
+
+  float Solver::normalizedChi2() {
+    prepareForCompute();
+    prepareForNewLevel();
+    IterationStats istat;
+    updateChi(istat);
+    // tg compute total number of variables
+    int num_variables = std::accumulate(activeVariables().begin(),
+                                        activeVariables().end(),
+                                        0,
+                                        [&](const int& acc, const VariableBase* v) -> int {
+                                          return std::move(acc) + v->perturbationDim();
+                                        });
+    // tg compute total number of measurements
+    const auto& factors  = _active_factors[_current_level];
+    int num_measurements = std::accumulate(
+      factors.begin(), factors.end(), 0, [&](const int& acc, const FactorBase* f) -> int {
+        return std::move(acc) + f->measurementDim();
+      });
+    // compute normalized chi square
+    float normalized_chi = istat.chi_normalized / (num_measurements - num_variables);
+    return normalized_chi;
   }
 
   bool Solver::computeMarginalCovariance(MatrixBlockVector& covariance_matricies_,
@@ -390,7 +409,21 @@ namespace srrg2_solver {
     if (!_linear_solver->computeBlockInverse(x, block_structure)) {
       return false;
     }
-
+    // tg compute total number of variables
+    int num_variables = std::accumulate(activeVariables().begin(),
+                                        activeVariables().end(),
+                                        0,
+                                        [&](const int& acc, const VariableBase* v) -> int {
+                                          return std::move(acc) + v->perturbationDim();
+                                        });
+    // tg compute total number of measurements
+    const auto& factors  = _active_factors[_current_level];
+    int num_measurements = std::accumulate(
+      factors.begin(), factors.end(), 0, [&](const int& acc, const FactorBase* f) -> int {
+        return std::move(acc) + f->measurementDim();
+      });
+    // tg scaling factor to get the proper value of the covariance
+    float covariance_scale = chi2() / (num_measurements - num_variables);
     for (const VariablePair& vp : variables_) {
       MatrixBlockBase* cov_block =
         x.blockRelease(vp.first->_hessian_index, vp.second->_hessian_index);
@@ -398,6 +431,7 @@ namespace srrg2_solver {
         throw std::runtime_error("Solver::computeMarginalCovariance | no block found, maybe "
                                  "you ask two times the same variables covariance");
       }
+      cov_block->scale(covariance_scale);
       covariance_matricies_.emplace_back(cov_block);
     }
 
@@ -539,6 +573,7 @@ namespace srrg2_solver {
   }
 
   bool Solver::solveQuadraticForm(IterationStats& istat) {
+    // _H.printLayout(SparseBlockMatrix::PrintMode::PrintValues);
     SystemUsageCounter::tic();
     SparseBlockLinearSolverPtr _linear_solver = param_linear_solver.value();
     _linear_solver->setCoefficientsChanged();
@@ -566,7 +601,6 @@ namespace srrg2_solver {
       var->applyPerturbationRaw(update->storage());
     }
     istat.t_update += SystemUsageCounter::toc();
-
     // ia update chi
     updateChi(istat);
   }
@@ -582,6 +616,20 @@ namespace srrg2_solver {
   void Solver::getPerturbation(std::vector<float>& dx) const {
     const SparseBlockLinearSolverPtr _linear_solver = param_linear_solver.value();
     _linear_solver->x().getDenseVector(dx);
+  }
+
+  void Solver::setPerturbation(const std::vector<float>& dx) const {
+    const SparseBlockLinearSolverPtr _linear_solver = param_linear_solver.value();
+    int idx                                         = 0;
+    SparseBlockMatrix dX(_b.blockRowDims(), _b.blockColDims());
+    for (int rb = 0; rb < dX.blockRows(); ++rb) {
+      MatrixBlockBase* row_block = dX.blockAt(rb, 0, true);
+      int block_dim              = dX.blockDims(rb, 0).first;
+      for (int r = 0; r < block_dim; ++r, ++idx) {
+        row_block->at(r, 0) = dx.at(idx);
+      }
+    }
+    _linear_solver->setX(dX);
   }
 
   void Solver::getRHS(std::vector<float>& b) const {

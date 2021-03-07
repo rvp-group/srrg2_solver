@@ -35,7 +35,7 @@ namespace srrg2_solver {
     jacobian<1>() = Jj;
   }
 
-  void SE3PosePoseGeodesicErrorFactor::draw(ViewerCanvasPtr canvas_) const {
+  void SE3PosePoseGeodesicErrorFactor::_drawImpl(ViewerCanvasPtr canvas_) const {
     if (!canvas_) {
       throw std::runtime_error("SE3PosePoseGeodesicQuaternionErrorFactor::draw|invalid canvas");
     }

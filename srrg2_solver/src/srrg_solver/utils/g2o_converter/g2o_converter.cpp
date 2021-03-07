@@ -60,10 +60,10 @@ namespace srrg2_solver {
     ADD_ACTION(ConverterActionVariableSE3EulerLeft);
     ADD_ACTION(ConverterActionSE3PosePoseChordalEulerLeftErrorFactor);
     // ia standard pgo
-    ADD_ACTION(ConverterActionVariableSE3QuaternionRight);
+    ADD_ACTION(ConverterActionVariableSE3QuaternionRightAD);
     ADD_ACTION(ConverterActionSE3PosePoseGeodesicErrorFactor)
     // ia standard pose point
-    ADD_ACTION(ConverterActionVariablePoint3);
+    ADD_ACTION(ConverterActionVariablePoint3AD);
     ADD_ACTION(ConverterActionSE3PosePointOffsetErrorFactor);
     // ia matchables
     ADD_ACTION(ConverterActionVariableMatchable)
@@ -239,7 +239,7 @@ namespace srrg2_solver {
       const uint64_t v_hash = typeid(*(v_it.value())).hash_code();
       if (_hash_action_map.count(v_hash) == 0) {
         throw std::runtime_error(CLASS_NAME + "_writeG2OGraph|unregistered hash [" +
-                                 std::to_string(v_hash) + "]");
+                                 std::to_string(v_hash) + "] " + v_it.value()->className());
       }
 
       // ia find the proper action delegate to write this hash
@@ -266,7 +266,7 @@ namespace srrg2_solver {
       const uint64_t e_hash = typeid(*(e_it.value())).hash_code();
       if (_hash_action_map.count(e_hash) == 0) {
         throw std::runtime_error(CLASS_NAME + "_writeG2OGraph|unregistered hash [" +
-                                 std::to_string(e_hash) + "]");
+                                 std::to_string(e_hash) + "] fuck you");
       }
 
       // ia find the proper action delegate to write this hash

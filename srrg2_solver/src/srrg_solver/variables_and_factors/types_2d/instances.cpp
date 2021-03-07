@@ -26,7 +26,6 @@ namespace srrg2_solver {
 
     BOSS_REGISTER_CLASS(SE2PosePoseGeodesicErrorFactor);
     BOSS_REGISTER_CLASS(SE2PosePoseChordalErrorFactor);
-
     BOSS_REGISTER_CLASS(SE2PosePointErrorFactor);
 
     BOSS_REGISTER_CLASS(SE2PosePointBearingErrorFactor);

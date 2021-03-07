@@ -63,7 +63,7 @@ namespace srrg2_solver {
     J_to(2, 2)        = partial_atan2_R.dot(R_row);
   }
 
-  void SE2PosePoseGeodesicErrorFactor::draw(srrg2_core::ViewerCanvasPtr canvas) const {
+  void SE2PosePoseGeodesicErrorFactor::_drawImpl(srrg2_core::ViewerCanvasPtr canvas) const {
     if (!canvas) {
       return;
     }

@@ -13,6 +13,7 @@ namespace srrg2_solver {
 
     FactorGraphInitializer();
     void setGraph(FactorGraphInterface& graph_);
+    void updateGraph();
     void compute();
 
     FactorGraphInitializerRulePtrContainer _rules;

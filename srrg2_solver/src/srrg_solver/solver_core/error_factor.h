@@ -105,6 +105,11 @@ namespace srrg2_solver {
                                           ThisType::template perturbationOffset<i>() * ErrorDim);
     }
 
+    /*! @return measurement dim */
+    int measurementDim() const final {
+      return ErrorDim;
+    }
+
     /*! @return The error vector */
     inline const ErrorVectorType& error() const {
       return _e;
@@ -137,7 +142,7 @@ namespace srrg2_solver {
     */
     virtual void errorAndJacobian(bool error_only) = 0;
 
-    void compute(bool chi_only = false, bool force = false) final;
+    void compute(bool chi_only = false, bool force = false) override;
     /*! Serialize the measurement contained in the factor */
     void serialize(ObjectData& odata, IdContext& context) override;
     /*! Deserialize the measurement contained in the factor */

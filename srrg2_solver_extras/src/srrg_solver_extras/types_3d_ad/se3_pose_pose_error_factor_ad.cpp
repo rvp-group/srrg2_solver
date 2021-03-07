@@ -5,7 +5,7 @@
 
 namespace srrg2_solver_extras {
 
-  void SE3PosePoseErrorFactorAD::draw(ViewerCanvasPtr canvas_) const {
+  void SE3PosePoseErrorFactorAD::_drawImpl(ViewerCanvasPtr canvas_) const {
     if (!canvas_)
       throw std::runtime_error("SE3PosePoseErrorFactorAD::draw|invalid canvas");
     Vector3f factor_line[2];

@@ -33,6 +33,7 @@ namespace srrg2_solver {
 
     // ia pose pose
     BOSS_REGISTER_CLASS(SE3PosePoseChordalEulerLeftErrorFactor);
+    BOSS_REGISTER_CLASS(SE3PosePoseChordalHessianFactor);
     BOSS_REGISTER_CLASS(SE3PosePoseGeodesicErrorFactor);
 
     // ia pose point
@@ -55,8 +56,5 @@ namespace srrg2_solver {
     BOSS_REGISTER_CLASS(SE3Point2PointWithSensorErrorFactorCorrespondenceDriven);
     BOSS_REGISTER_CLASS(SE3PriorErrorFactorAD);
     BOSS_REGISTER_CLASS(SE3PriorOffsetErrorFactorAD);
-
-    // ldg pose-pose-offset factor, maybe useless
-    BOSS_REGISTER_CLASS(SE3PosePoseOffsetErrorFactorAD);
   }
 } // namespace srrg2_solver

@@ -7,6 +7,11 @@ namespace srrg2_solver {
   // naive block solver that uses the cholesky block decomposition
   // no ordering is applied
   class SparseBlockLinearSolverCholesky : public SparseBlockLinearSolver {
+  public:
+    // compute inverse of specific block of A
+    bool computeBlockInverse(SparseBlockMatrix& inverse_blocks,
+                             const std::vector<IntPair>& blocks_layout) override;
+
   protected:
     // computes the internal structure, given the structure of A
     virtual Status updateStructure();
@@ -17,9 +22,6 @@ namespace srrg2_solver {
     // solves the linear system based on the updated coefficients
     virtual Status updateSolution();
 
-    // compute inverse of specific block of A
-    bool computeBlockInverse(SparseBlockMatrix& inverse_blocks,
-                             const std::vector<IntPair>& blocks_layout) override;
 
     SparseBlockCholesky _L;
   };

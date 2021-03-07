@@ -27,7 +27,7 @@ namespace srrg2_solver {
      */
     void deserializeMeasurement(ObjectData& odata, IdContext& context) final;
 
-    void draw(ViewerCanvasPtr canvas_) const override;
+    void _drawImpl(ViewerCanvasPtr canvas_) const override;
     void errorAndJacobian(bool error_only_ = false) final;
   };
 

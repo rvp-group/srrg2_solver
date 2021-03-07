@@ -35,11 +35,11 @@ If you use our `srrg2_solver`, please cite us in your work.
 
 ## Contributors
 * Giorgio Grisetti
-* Bartolomeo Della Corte
-* Dominik Schlegel
+* Tiziano Guadagnino
 * Irvin Aloise
 * Mirco Colosi
-* Tiziano Guadagnino
+* Bartolomeo Della Corte
+* Dominik Schlegel
 
 ## License
 BSD 3.0

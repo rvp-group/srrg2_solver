@@ -56,11 +56,11 @@ namespace srrg2_solver {
     return true;
   }
 
-  bool GradientNormTerminationCriteria::hasToStop() const {
-    std::vector<float> gradient;
-    getRHS(gradient);
+  bool PerturbationNormTerminationCriteria::hasToStop() const {
+    std::vector<float> perturbation;
+    getPerturbation(perturbation);
     float squared_norm = 0;
-    for(const float& x_i : gradient){
+    for (const float& x_i : perturbation) {
       squared_norm += x_i*x_i;
     }
 
@@ -71,18 +71,18 @@ namespace srrg2_solver {
     return true;
   }
 
-  bool PerturbationNormTerminationCriteria::hasToStop() const {
-    std::vector<float> delta_x;
-    getPerturbation(delta_x);
-    float squared_norm = 0;
-    for(const float& x_i : delta_x){
-      squared_norm += x_i*x_i;
+  bool RelativeGradientChiTerminationCriteria::hasToStop() const {
+    std::vector<float> gradient;
+    getRHS(gradient);
+    float squared_norm_gradient = 0;
+    for (const float& x_i : gradient) {
+      squared_norm_gradient += x_i * x_i;
     }
-
-    if(std::sqrt(squared_norm) > param_epsilon.value()){
+    float stabilized_error_norm = 1 + std::sqrt(_solver->iterationStats().back().chi_normalized);
+    float gradient_norm         = std::sqrt(squared_norm_gradient);
+    if (gradient_norm > param_epsilon.value() * stabilized_error_norm) {
       return false;
     }
-
     return true;
   }
 

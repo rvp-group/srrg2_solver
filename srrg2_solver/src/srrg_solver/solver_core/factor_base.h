@@ -50,12 +50,17 @@ namespace srrg2_solver {
 
     /*! Set level of hierarchy where the factor is optimized */
     void setLevel(int level_) {
-      _current_level = level_;
+      _level = level_;
     }
 
     int level() const {
-      return _current_level;
+      return _level;
     }
+
+    int currentLevel() const {
+      return _current_level; // current optimization level, set by solver;
+    }
+    
     /*! Setter for the robustifier */
     inline void setRobustifier(RobustifierBase* r) {
       _robustifier = r;
@@ -65,6 +70,9 @@ namespace srrg2_solver {
     inline RobustifierBase* robustifier() {
       return _robustifier;
     }
+
+    /*! @return Measurement dimension */
+    virtual int measurementDim() const = 0;
 
     /*! Connects the variables with the corresponding factor
      that is for each factor variable, it looks at its id
@@ -149,7 +157,7 @@ namespace srrg2_solver {
 
     virtual bool variablesTainted() const = 0;
 
-    void draw(ViewerCanvasPtr canvas_) const override;
+    void _drawImpl(ViewerCanvasPtr canvas_) const override;
 
     /*! override this in the derived class
         here you should:
@@ -242,15 +250,18 @@ namespace srrg2_solver {
                            - _kernel_scales[1] : derivative of the kernel function
 evaluated in the current linearization point,
                            - _kernel_scales[2] : second order derivative. */
-    int _current_level = 0;
+    int _level = 0;
     /*!< Level of the hierarchy at which the factor is considered in the optimization */
     bool _enabled = true;
+
+    int _current_level=-1;
   };
 
   /*! Associative container, the key is the graph id while the value is pointer to the corresponding
    * factor */
-  using IdFactorPtrContainer = AbstractMapView_<FactorBase::Id, FactorBase const*>;
-  using IdFactorPair         = std::pair<FactorBase::Id, FactorBase const*>;
+  using IdFactorPtrContainer = AbstractMapView_<FactorBase::Id, FactorBase *>;
+  using IdFactorConstPtrContainer = AbstractMapView_<FactorBase::Id, const FactorBase *>;
+  using IdFactorPair         = std::pair<FactorBase::Id, FactorBase *>;
   using FactorBasePtr        = std::shared_ptr<FactorBase>; /*!< Shared pointer to FactorBase */
 
 } // namespace srrg2_solver
